@@ -1,0 +1,23 @@
+# === OS ===
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# === Editor ===
+.vscode/
+.idea/
+*.swp
+
+# === Rahasia (JANGAN commit) ===
+backend/apps-script/Config.local.gs
+.env
+.env.local
+
+# === Backup & temp ===
+backups/*.zip
+exports/temp_*
+*.tmp
+
+# === Node (kalau nanti dipakai) ===
+node_modules/
+package-lock.json
