@@ -1,0 +1,170 @@
+================================================================
+BACKUP ARSITEKTUR - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
+================================================================
+Terakhir diupdate : 2026-10-13 18:41
+Versi             : 0.1.0-alpha (Fase 3 selesai sebagian)
+Dibuat oleh       : USER + AI assistant
+
+================================================================
+1. RINGKASAN BISNIS
+================================================================
+Nama Bisnis       : Kunang-kunang 22
+Bidang            : Produsen kue
+Tujuan Sistem     : Aplikasi web reseller pesan barang ke kantor,
+                    cegah overselling, integrasi ekspor ke Jurnal Mekari.
+Jumlah Reseller   : 2235 (dari migrasi Mekari)
+Jumlah Produk     : 502 Barang Jadi (dari migrasi Mekari)
+Jumlah Admin      : 3 (rencana)
+Owner             : Perlu login sendiri (read-only laporan)
+
+================================================================
+2. STACK TEKNOLOGI
+================================================================
+Frontend  : HTML + JS vanilla (GitHub Pages)
+Backend   : Google Apps Script Web App
+Database  : Google Sheets (multi-sheet)
+Export    : SheetJS -> XLSX (kompatibel Jurnal Mekari)
+Notifikasi: Telegram (utama) + WhatsApp fallback (wa.me)
+Auth      : No HP + PIN (SHA-256 + salt)
+
+================================================================
+3. LOKASI & URL PENTING
+================================================================
+Folder lokal PC   : C:\Users\USER\Projects\KunangKunang22
+GitHub repo       : https://github.com/brownisdonat8-tech/jatijajar22
+GitHub username   : brownisdonat8-tech
+GitHub email      : brownisdonat8@gmail.com
+Branch            : main
+
+Spreadsheet ID    : 1cBHDpm1pJWbmxbxExBpTTW4asYgyoTGx5XbITWXvD7M
+Spreadsheet URL   : https://docs.google.com/spreadsheets/d/1cBHDpm1pJWbmxbxExBpTTW4asYgyoTGx5XbITWXvD7M/edit
+
+Apps Script       : https://script.google.com
+Apps Script nama  : KK22 Backend
+Apps Script buka  : Klik project "KK22 Backend" di home script.google.com
+
+FILE SUMBER MEKARI (di Google Drive user):
+- Product Export  : 1Nej89ghERKkvHru8oUZ6A2HudoWO4Gzz
+- Contact Export  : 1ni1dO3o3Fafjm4gKHs4xWRyiFh7B5Nkd
+- SO Template     : 14nPMW704wfCaj94DusgrVL01gA36-nes
+
+================================================================
+4. FILE LOKAL APPS SCRIPT
+================================================================
+Lokasi: C:\Users\USER\Projects\KunangKunang22\backend\apps-script\
+
+- Config.gs     -> Konfigurasi global (SPREADSHEET_ID, PREFIX, dll)
+- Utils.gs      -> Helper: normalizePhone, nowJakarta, pinHash, dll
+- Setup.gs      -> setupAllSheets(): bikin 9 sheet + header + seed
+- Migrate.gs    -> previewProduk/migrateProduk/previewReseller/migrateReseller
+- Diagnose.gs   -> diagnoseReseller() untuk cek struktur file sumber
+- Auth.gs       -> setupAdminPertama, createUser, findUserByPhone, ensureSessionsSheet
+
+================================================================
+5. STRUKTUR 9 SHEET DATABASE
+================================================================
+1. USERS           -> Login & auth (id_user, no_hp, pin_hash, pin_salt, role, ...)
+2. RESELLER        -> MIRROR 38 kolom Mekari + 5 kolom kita (id_reseller, aktif, ...)
+3. PRODUK          -> MIRROR 14 kolom Mekari + 6 kolom kita (id_produk, gambar_url, ...)
+4. STOK_LOG        -> Audit perubahan stok
+5. PESANAN         -> Header pesanan (order_number, customer_ref_no, status, ...)
+6. DETAIL_PESANAN  -> Item per pesanan (nama_produk, qty, harga_saat_pesan, ...)
+7. LOG_AKTIVITAS   -> Audit trail (siapa ngapain kapan)
+8. CONFIG          -> Key-value config
+9. JURNAL_MAPPING  -> Mapping untuk export ke Mekari
+10. SESSIONS       -> (auto-create) Token login aktif
+
+PENTING: Sheet RESELLER & PRODUK mirror 100 persen struktur Mekari.
+         Tambahan kita SELALU di kolom paling kanan.
+         JANGAN UBAH kolom Mekari, karena source of truth ada di Mekari.
+
+================================================================
+6. KEPUTUSAN DESAIN PENTING
+================================================================
+- Kunci login       : no_hp (format 62xxx) + PIN (4-6 digit, di-hash SHA-256+salt)
+- Kunci produk      : nama_produk HARUS UNIK (ini key di Mekari!)
+- Kunci reseller    : DisplayName Mekari = nama_reseller, HARUS UNIK
+- OrderNumber format: KK22-{YYYYMMDDHHMM}-{4digit} (contoh: KK22-202610131623-0001)
+- CustomerRefNo     : KK22-ORD-{4digit} (ID internal kita)
+- Stok              : pakai stok_tersedia & stok_reserved (bukan single "Stock")
+- Harga             : disnapshot ke Detail_Pesanan saat pesan
+- Pembayaran        : SKIP dulu. Nanti integrasi dengan AR Mekari.
+- Role              : owner (read-only), admin (CRUD), reseller (pesanan sendiri)
+- Migrasi filter    : Type= customer (reseller), ProductCategory= Barang Jadi
+
+================================================================
+7. STATUS MIGRASI DATA
+================================================================
+RESELLER -> 2235 baris berhasil migrate dari file Mekari
+            (filter: kolom [0] *Type mengandung "customer")
+PRODUK   -> 502 baris berhasil migrate dari file Mekari
+            (filter: ProductCategory = "Barang Jadi")
+            Exclude: NAMA LAMA#, Reject#, ERP#, #ERP, tes-, trailing '.'
+
+Duplikat : 0 (untuk kedua sheet)
+
+Admin pertama -> KK22-USR-0001 (role: owner), sudah dibuat via setupAdminPertama()
+
+================================================================
+8. KREDENSIAL (SIMPAN DI TEMPAT AMAN, JANGAN COMMIT KE GIT)
+================================================================
+Admin no_hp : (lihat di sheet USERS kolom B, baris 2)
+Admin PIN   : (yang kamu ketik di ADMIN_PERTAMA.pin tadi)
+              -- SUDAH DI-HASH di sheet, jadi hanya kamu yang tahu --
+
+NOTE: Setelah setupAdminPertama() sukses, nilai ADMIN_PERTAMA.pin di Auth.gs
+      sudah diganti placeholder. Aman.
+
+================================================================
+9. ROADMAP SELANJUTNYA
+================================================================
+FASE 3 (SEDANG BERJALAN):
+   [DONE] Bikin file Auth.gs
+   [DONE] Setup admin pertama (KK22-USR-0001)
+   [NEXT] Bikin endpoint doPost untuk login
+   [NEXT] Deploy Web App
+   [NEXT] Test login via PowerShell
+
+FASE 4 -> Endpoint API: getProduk, buatPesanan, getRiwayat
+FASE 5 -> GitHub Pages + frontend login reseller
+FASE 6 -> Frontend: katalog + form pesanan
+FASE 7 -> Frontend: riwayat & status
+FASE 8 -> Dashboard admin: pesanan
+FASE 9 -> Dashboard admin: kelola produk, stok, reseller
+FASE 10 -> Dashboard owner: laporan
+FASE 11 -> Notifikasi Telegram + fallback WA
+FASE 12 -> Export Jurnal Mekari (XLSX sesuai template SO)
+FASE 13 -> Auto-backup + PWA + offline
+FASE 14 -> User manual + BACKUP_ARSITEKTUR.txt
+FASE 15 -> Uji end-to-end
+
+================================================================
+10. CARA LANJUT BESOK
+================================================================
+1. Buka chat baru dengan AI assistant
+2. Kirim file ini: C:\Users\USER\Projects\KunangKunang22\docs\BACKUP_ARSITEKTUR.txt
+3. Bilang: "Lanjut dari sini. Kita tadi selesai Fase 3 Langkah 2."
+4. AI akan lanjut dari Langkah 3: bikin endpoint doPost untuk login
+
+================================================================
+11. CHECKLIST SEBELUM TUTUP HARI INI
+================================================================
+[X] Spreadsheet 9 sheet + 1 auto (SESSIONS) sudah jadi
+[X] 2235 reseller + 502 produk sudah masuk database
+[X] Admin pertama sudah dibuat
+[X] Semua file .gs tersimpan lokal di C:\Users\USER\Projects\KunangKunang22
+[X] Git commit & push (dilakukan otomatis oleh skrip ini)
+[X] GitHub repo sync dengan lokal
+
+================================================================
+12. CATATAN UNTUK AI ASSISTANT (BESOK)
+================================================================
+- User bukan programmer profesional tapi familiar PowerShell, Git, Apps Script
+- Setiap langkah: kasih perintah PowerShell siap copy-paste
+- JANGAN kasih semua langkah sekaligus, tunggu output dulu
+- Selalu sebut TARGET FOLDER
+- Kalau error: diagnosa dulu, jangan langsung ganti pendekatan
+- Pakai here-string @'...'@ untuk bikin file
+- Prinsip: gratis > bayar, simpel > rumit, user-friendly
+- Mekari adalah source of truth; JANGAN UBAH struktur mirror Mekari
+================================================================
