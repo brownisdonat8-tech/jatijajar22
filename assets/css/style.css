@@ -183,7 +183,7 @@ body.wide { align-items: flex-start; padding: 16px; }
 .produk-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
 .produk-card .img {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 2 / 1;
   border-radius: 8px;
   background: #e9ecf2 center/cover no-repeat;
   margin-bottom: 8px;
@@ -403,3 +403,26 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
 
 /* Sembunyikan input qty lama (kalau masih ada) */
 .produk-card .qty-input { display: none; }
+
+/* --- Card UX v3: qty badge + landscape image --- */
+.produk-card .harga-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.produk-card .harga-row .harga {
+  margin-bottom: 0;
+}
+.produk-card .qty-badge {
+  background: #667eea;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  min-width: 26px;
+  text-align: center;
+}

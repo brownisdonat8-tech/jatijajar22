@@ -111,12 +111,20 @@ function renderProduk() {
     var imgStyle = p.gambar_url
       ? 'style="background-image:url(' + safeUrl(p.gambar_url) + ')"'
       : '';
+    var cartItem = KK22_CART.findItem(p.nama_produk);
+    var cartQty = cartItem ? Number(cartItem.qty) : 0;
+    var badgeStyle = cartQty > 0 ? '' : ' style="display:none"';
+    var badgeHtml = '<span class="qty-badge" data-nama="' + esc(p.nama_produk) + '"' + badgeStyle + '>\u00d7' + cartQty + '</span>';
+
     html +=
       '<div class="produk-card" data-nama="' + esc(p.nama_produk) + '">' +
         '<div class="img" ' + imgStyle + '></div>' +
         '<div class="nama">' + esc(p.nama_produk) + '</div>' +
         '<div class="meta">' + esc(p.satuan || '-') + '</div>' +
-        '<div class="harga">' + rp(p.harga_jual) + '</div>' +
+        '<div class="harga-row">' +
+          '<span class="harga">' + rp(p.harga_jual) + '</span>' +
+          badgeHtml +
+        '</div>' +
         '<div class="stok ' + stokClass + '">Stok: ' + stok + '</div>' +
         '<button class="btn-add" data-nama="' + esc(p.nama_produk) + '">+ Tambah</button>' +
       '</div>';
@@ -132,11 +140,20 @@ function renderProduk() {
       if (!produk) return;
       KK22_CART.add(produk, 1);
       updateCartBadge();
+
+      // Update qty badge di card ini (tanpa re-render seluruh grid)
+      var card = btn.closest('.produk-card');
+      var badge = card.querySelector('.qty-badge');
+      var cartItem = KK22_CART.findItem(nama);
+      var newQty = cartItem ? Number(cartItem.qty) : 0;
+      if (badge) {
+        badge.textContent = '\u00d7' + newQty;
+        badge.style.display = newQty > 0 ? '' : 'none';
+      }
+
       // Animasi pulse di tombol
       btn.classList.add('pulse');
       setTimeout(function() { btn.classList.remove('pulse'); }, 350);
-      // Toast singkat
-      var card = btn.closest('.produk-card');
       card.classList.add('added');
       setTimeout(function() { card.classList.remove('added'); }, 400);
       showAlert('+1 ' + nama, 'success');
