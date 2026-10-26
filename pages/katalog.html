@@ -38,6 +38,12 @@
   <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
 </div>
 
+<div id="lightbox" class="lightbox" style="display:none;">
+  <button class="lightbox-close" id="lightboxClose" type="button">&times;</button>
+  <img id="lightboxImg" src="" alt="">
+  <div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/cart.js"></script>
@@ -80,6 +86,40 @@ function showAlert(msg, type) {
   b._t = setTimeout(function() { b.className = 'alert'; }, 3000);
 }
 
+function openLightbox(url, caption) {
+  if (!url) return;
+  var lb = document.getElementById('lightbox');
+  var img = document.getElementById('lightboxImg');
+  var cap = document.getElementById('lightboxCaption');
+  if (!lb || !img) return;
+  img.src = url;
+  cap.textContent = caption || '';
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  var lb = document.getElementById('lightbox');
+  var img = document.getElementById('lightboxImg');
+  if (!lb) return;
+  lb.style.display = 'none';
+  if (img) img.src = '';
+  document.body.style.overflow = '';
+}
+
+(function initLightbox() {
+  var lb = document.getElementById('lightbox');
+  if (!lb) return;
+  lb.addEventListener('click', function(e) {
+    if (e.target.id === 'lightbox' || e.target.id === 'lightboxClose') {
+      closeLightbox();
+    }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && lb.style.display !== 'none') closeLightbox();
+  });
+})();
+
 function renderProduk() {
   var q = document.getElementById('q').value.trim().toLowerCase();
   var hideStok0 = document.getElementById('hideStok0').checked;
@@ -115,10 +155,11 @@ function renderProduk() {
     var cartQty = cartItem ? Number(cartItem.qty) : 0;
     var badgeStyle = cartQty > 0 ? '' : ' style="display:none"';
     var badgeHtml = '<span class="qty-badge" data-nama="' + esc(p.nama_produk) + '"' + badgeStyle + '>\u00d7' + cartQty + '</span>';
+    var minusDisabled = cartQty > 0 ? '' : ' disabled';
 
     html +=
       '<div class="produk-card" data-nama="' + esc(p.nama_produk) + '">' +
-        '<div class="img" ' + imgStyle + '></div>' +
+        '<div class="img" data-nama="' + esc(p.nama_produk) + '" ' + imgStyle + '></div>' +
         '<div class="nama">' + esc(p.nama_produk) + '</div>' +
         '<div class="meta">' + esc(p.satuan || '-') + '</div>' +
         '<div class="harga-row">' +
@@ -126,11 +167,26 @@ function renderProduk() {
           badgeHtml +
         '</div>' +
         '<div class="stok ' + stokClass + '">Stok: ' + stok + '</div>' +
-        '<button class="btn-add" data-nama="' + esc(p.nama_produk) + '">+ Tambah</button>' +
+        '<div class="actions-row">' +
+          '<button class="btn-add" data-nama="' + esc(p.nama_produk) + '">+ Tambah</button>' +
+          '<button class="btn-minus" data-nama="' + esc(p.nama_produk) + '"' + minusDisabled + '>\u2212</button>' +
+        '</div>' +
       '</div>';
   }
   html += '</div>';
   wrap.innerHTML = html;
+
+  function updateCardQtyUI(card, nama) {
+    var badge = card.querySelector('.qty-badge');
+    var btnMinus = card.querySelector('.btn-minus');
+    var cartItem = KK22_CART.findItem(nama);
+    var q = cartItem ? Number(cartItem.qty) : 0;
+    if (badge) {
+      badge.textContent = '\u00d7' + q;
+      badge.style.display = q > 0 ? '' : 'none';
+    }
+    if (btnMinus) btnMinus.disabled = q <= 0;
+  }
 
   wrap.querySelectorAll('.btn-add').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
@@ -141,22 +197,43 @@ function renderProduk() {
       KK22_CART.add(produk, 1);
       updateCartBadge();
 
-      // Update qty badge di card ini (tanpa re-render seluruh grid)
       var card = btn.closest('.produk-card');
-      var badge = card.querySelector('.qty-badge');
-      var cartItem = KK22_CART.findItem(nama);
-      var newQty = cartItem ? Number(cartItem.qty) : 0;
-      if (badge) {
-        badge.textContent = '\u00d7' + newQty;
-        badge.style.display = newQty > 0 ? '' : 'none';
-      }
+      updateCardQtyUI(card, nama);
 
-      // Animasi pulse di tombol
       btn.classList.add('pulse');
       setTimeout(function() { btn.classList.remove('pulse'); }, 350);
       card.classList.add('added');
       setTimeout(function() { card.classList.remove('added'); }, 400);
       showAlert('+1 ' + nama, 'success');
+    });
+  });
+
+  wrap.querySelectorAll('.btn-minus').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var nama = btn.dataset.nama;
+      var cartItem = KK22_CART.findItem(nama);
+      if (!cartItem) return;
+      var newQty = Number(cartItem.qty) - 1;
+      var card = btn.closest('.produk-card');
+      if (newQty <= 0) {
+        KK22_CART.remove(nama);
+        showAlert('Dihapus: ' + nama, 'info');
+      } else {
+        KK22_CART.setQty(nama, newQty);
+        showAlert('\u22121 ' + nama, 'info');
+      }
+      updateCartBadge();
+      updateCardQtyUI(card, nama);
+    });
+  });
+
+  wrap.querySelectorAll('.img').forEach(function(img) {
+    img.addEventListener('click', function() {
+      var nama = img.dataset.nama;
+      var p = semuaProduk.find(function(x) { return x.nama_produk === nama; });
+      if (!p || !p.gambar_url) return;
+      openLightbox(p.gambar_url, p.nama_produk);
     });
   });
 }

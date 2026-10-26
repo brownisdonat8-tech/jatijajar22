@@ -368,11 +368,10 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
 
 /* --- Card UX v2: tombol tambah besar + feedback --- */
 .produk-card .btn-add {
-  width: 100%;
+  flex: 3;
   padding: 10px 8px;
   font-size: 13px;
   font-weight: 700;
-  margin-top: 8px;
   border-radius: 8px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -425,4 +424,104 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
   white-space: nowrap;
   min-width: 26px;
   text-align: center;
+}
+
+/* --- Card UX v4: tombol + besar, âˆ’ kecil (75:25) --- */
+.produk-card .actions-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.produk-card .btn-minus {
+  flex: 1;
+  padding: 10px 4px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  background: #f1f3f6;
+  color: #555;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.produk-card .btn-minus:hover:not(:disabled) {
+  background: #e2e6ee;
+}
+.produk-card .btn-minus:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.produk-card .btn-minus:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* --- Lightbox foto produk --- */
+.produk-card .img { cursor: zoom-in; }
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: lbFadeIn 0.15s ease-out;
+}
+@keyframes lbFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.lightbox img {
+  max-width: 95vw;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+.lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 44px;
+}
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: none;
+  box-shadow: none;
+}
+.lightbox-caption {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  color: white;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  word-break: break-word;
 }
