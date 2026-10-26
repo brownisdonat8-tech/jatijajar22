@@ -35,6 +35,7 @@ function doPost(e) {
       case 'login':   return handleLogin_(body);
       case 'logout':  return handleLogout_(body);
       case 'whoami':  return handleWhoami_(body);
+      case 'getProduk': return handleGetProduk_(body);
       default:        return jsonResponse_({ ok: false, error: 'Action tidak dikenal: ' + action });
     }
   } catch (err) {
@@ -210,4 +211,62 @@ function readConfig_(key) {
     }
   } catch (e) {}
   return null;
+}
+// ============================================================
+// GET PRODUK (katalog untuk reseller)
+// ============================================================
+
+function handleGetProduk_(body) {
+  const user = validateToken_(body.token);
+  if (!user) {
+    return jsonResponse_({ ok: false, error: 'Token tidak valid atau sudah expired. Silakan login ulang.' });
+  }
+
+  const q = String(body.q || '').trim().toLowerCase();
+  const sh = getSheet_(CONFIG.SHEETS.PRODUK);
+  const last = sh.getLastRow();
+  if (last < 2) {
+    return jsonResponse_({ ok: true, data: { total: 0, items: [] } });
+  }
+
+  const data = sh.getRange(2, 1, last - 1, 20).getValues();
+  const items = [];
+  const isAdmin = (user.role === 'admin' || user.role === 'owner');
+
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    const nama = String(r[0] || '').trim();
+    const kategori = String(r[13] || '').trim();
+    const aktif = String(r[17] || '').toUpperCase();
+
+    if (!nama) continue;
+    if (kategori !== 'Barang Jadi') continue;
+    if (!isAdmin && aktif !== 'TRUE') continue;
+    if (q && nama.toLowerCase().indexOf(q) === -1) continue;
+
+    const stok = Number(r[4]) || 0;
+    const reserved = Number(r[16]) || 0;
+
+    items.push({
+      id_produk:    String(r[14] || ''),
+      nama_produk:  nama,
+      kode_sku:     String(r[2] || ''),
+      satuan:       String(r[5] || ''),
+      harga_jual:   Number(r[9]) || 0,
+      stok_tersedia: stok,
+      stok_reserved: reserved,
+      stok_available: stok - reserved,
+      gambar_url:   String(r[15] || ''),
+      aktif:        aktif === 'TRUE'
+    });
+  }
+
+  return jsonResponse_({
+    ok: true,
+    data: {
+      total: items.length,
+      q: q || null,
+      items: items
+    }
+  });
 }
