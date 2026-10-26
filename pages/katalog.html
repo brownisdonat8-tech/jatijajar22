@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Katalog Produk - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="katalog.html" class="active">Katalog</a>
+      <a href="pesan.html" class="cart-btn">Keranjang <span class="cart-badge" id="cartCount">0</span></a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <div class="search-bar">
+    <input type="text" id="q" placeholder="Cari produk..." autocomplete="off">
+    <button id="btnSearch">Cari</button>
+    <button id="btnRefresh" class="btn-secondary">Refresh</button>
+  </div>
+
+  <div class="filter-row">
+    <label><input type="checkbox" id="hideStok0" checked> Sembunyikan stok 0</label>
+    <span class="count-info" id="countInfo">-</span>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="produkWrap">
+    <div class="empty-state"><span class="spinner"></span> Memuat produk...</div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/cart.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+(async function() {
+  const token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  const r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+})();
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+var semuaProduk = [];
+var lastCached = false;
+
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function safeUrl(u) { return String(u || '').replace(/["'\s()<>]/g, ''); }
+
+function updateCartBadge() {
+  document.getElementById('cartCount').textContent = KK22_CART.count();
+}
+
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 3000);
+}
+
+function renderProduk() {
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var hideStok0 = document.getElementById('hideStok0').checked;
+  var filtered = semuaProduk.filter(function(p) {
+    if (q && String(p.nama_produk || '').toLowerCase().indexOf(q) === -1) return false;
+    if (hideStok0 && (Number(p.stok_available) || 0) <= 0) return false;
+    return true;
+  });
+
+  document.getElementById('countInfo').textContent =
+    filtered.length + ' dari ' + semuaProduk.length + ' produk' + (lastCached ? ' (cache)' : '');
+
+  var wrap = document.getElementById('produkWrap');
+  if (filtered.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">&#128533;</div>Produk tidak ditemukan.</div>';
+    return;
+  }
+
+  var html = '<div class="produk-grid">';
+  for (var i = 0; i < filtered.length; i++) {
+    var p = filtered[i];
+    var stok = Number(p.stok_available) || 0;
+    var stokClass = stok <= 0 ? 'low' : '';
+    var imgStyle = p.gambar_url
+      ? 'style="background-image:url(' + safeUrl(p.gambar_url) + ')"'
+      : '';
+    html +=
+      '<div class="produk-card">' +
+        '<div class="img" ' + imgStyle + '></div>' +
+        '<div class="nama">' + esc(p.nama_produk) + '</div>' +
+        '<div class="meta">' + esc(p.satuan || '-') + '</div>' +
+        '<div class="harga">' + rp(p.harga_jual) + '</div>' +
+        '<div class="stok ' + stokClass + '">Stok: ' + stok + '</div>' +
+        '<div class="actions">' +
+          '<input type="number" min="1" value="1" class="qty-input">' +
+          '<button class="btn-add" data-nama="' + esc(p.nama_produk) + '">+ Keranjang</button>' +
+        '</div>' +
+      '</div>';
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.btn-add').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var card = btn.closest('.produk-card');
+      var qty = Number(card.querySelector('.qty-input').value) || 1;
+      var nama = btn.dataset.nama;
+      var produk = semuaProduk.find(function(p) { return p.nama_produk === nama; });
+      if (!produk) return;
+      KK22_CART.add(produk, qty);
+      updateCartBadge();
+      showAlert('+' + qty + ' ' + nama + ' ditambahkan ke keranjang', 'success');
+    });
+  });
+}
+
+async function loadProduk(force) {
+  document.getElementById('produkWrap').innerHTML =
+    '<div class="empty-state"><span class="spinner"></span> Memuat produk...</div>';
+  var r = await KK22_API.getProduk('', force === true);
+  if (!r.ok) {
+    document.getElementById('produkWrap').innerHTML =
+      '<div class="empty-state">Gagal memuat: ' + esc(r.error) + '</div>';
+    return;
+  }
+  semuaProduk = r.data.items || [];
+  lastCached = !!r.data._cached;
+  renderProduk();
+}
+
+document.getElementById('q').addEventListener('input', renderProduk);
+document.getElementById('hideStok0').addEventListener('change', renderProduk);
+document.getElementById('btnSearch').addEventListener('click', renderProduk);
+document.getElementById('btnRefresh').addEventListener('click', async function() {
+  KK22_API.clearProdukCache();
+  await loadProduk(true);
+  showAlert('Produk diperbarui dari server', 'info');
+});
+
+updateCartBadge();
+loadProduk(false);
+</script>
+</body>
+</html>

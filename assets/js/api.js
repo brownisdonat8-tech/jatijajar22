@@ -74,6 +74,92 @@ window.KK22_API = (function() {
     return call('whoami', { token: token });
   }
 
+  // ========== PRODUK CACHE (localStorage) ==========
+  // Strategi: fetch full list sekali (tanpa q), filter q di client.
+  // Hasil: CALL 2+ instant 0 ms (bypass 1s Apps Script overhead).
+  function _produkCacheKey() {
+    const u = getUser();
+    return cfg.STORAGE_KEY_PRODUK_CACHE + '_' + (u && u.role ? u.role : 'guest');
+  }
+
+  function getProdukCache() {
+    try {
+      const raw = localStorage.getItem(_produkCacheKey());
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.ts || !Array.isArray(obj.items)) return null;
+      if (Date.now() - obj.ts > cfg.TTL_PRODUK_MS) return null;
+      return obj;
+    } catch (e) { return null; }
+  }
+
+  function setProdukCache(items) {
+    try {
+      localStorage.setItem(_produkCacheKey(), JSON.stringify({ ts: Date.now(), items: items }));
+    } catch (e) {}
+  }
+
+  function clearProdukCache() {
+    try {
+      const u = getUser();
+      const role = (u && u.role) ? u.role : 'guest';
+      localStorage.removeItem(cfg.STORAGE_KEY_PRODUK_CACHE + '_' + role);
+    } catch (e) {}
+  }
+
+  function _filterProduk(items, q) {
+    if (!q) return items;
+    const ql = q.toLowerCase();
+    return items.filter(function(p) {
+      return String(p.nama_produk || '').toLowerCase().indexOf(ql) !== -1;
+    });
+  }
+
+  async function getProduk(q, forceRefresh) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const ql = String(q || '').trim();
+    const cache = forceRefresh ? null : getProdukCache();
+
+    if (cache) {
+      const filtered = _filterProduk(cache.items, ql);
+      return { ok: true, data: { total: filtered.length, q: ql || null, items: filtered, _cached: true } };
+    }
+
+    const r = await call('getProduk', { token: token, q: '' });
+    if (!r.ok || !r.data) return r;
+    setProdukCache(r.data.items);
+    const filtered = _filterProduk(r.data.items, ql);
+    return { ok: true, data: { total: filtered.length, q: ql || null, items: filtered, _cached: false } };
+  }
+
+  // ========== BUAT PESANAN ==========
+  async function buatPesanan(items, tglKirim, catatan, namaReseller) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const body = {
+      token: token,
+      items: items,
+      tgl_kirim: tglKirim
+    };
+    if (catatan) body.catatan = catatan;
+    if (namaReseller) body.nama_reseller = namaReseller;
+    return call('buatPesanan', body);
+  }
+
+  // ========== GET PESANAN (list) ==========
+  async function getPesanan() {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getPesanan', { token: token });
+  }
+
+  async function getDetailPesanan(idPesanan) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getDetailPesanan', { token: token, id_pesanan: idPesanan });
+  }
+
   return {
     call: call,
     login: login,
@@ -83,6 +169,12 @@ window.KK22_API = (function() {
     setToken: setToken,
     getUser: getUser,
     setUser: setUser,
-    clearAuth: clearAuth
+    clearAuth: clearAuth,
+    getProduk: getProduk,
+    buatPesanan: buatPesanan,
+    getPesanan: getPesanan,
+    getDetailPesanan: getDetailPesanan,
+    getProdukCache: getProdukCache,
+    clearProdukCache: clearProdukCache
   };
 })();

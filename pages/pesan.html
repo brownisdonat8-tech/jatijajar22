@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesan - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="katalog.html">Katalog</a>
+      <a href="pesan.html" class="cart-btn active">Keranjang <span class="cart-badge" id="cartCount">0</span></a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="formWrap">
+    <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Form Pemesanan</h1>
+    <p style="color:#888;font-size:13px;margin-bottom:16px;">Pesanan akan digabung otomatis bila sudah ada PO aktif untuk tanggal kirim yang sama.</p>
+
+    <div id="cartWrap"></div>
+
+    <div class="form-row">
+      <label for="tglKirim">Tanggal Kirim <span style="color:#dc3545">*</span></label>
+      <input type="date" id="tglKirim" required>
+      <div class="hint">Tanggal pengiriman yang diinginkan. Default: H+2 dari hari ini.</div>
+    </div>
+
+    <div class="form-row">
+      <label for="catatan">Catatan (opsional)</label>
+      <textarea id="catatan" placeholder="cth: packing rapi, tambahkan kartu ucapan..." maxlength="300"></textarea>
+    </div>
+
+    <button id="btnSubmit" style="margin-top:20px;">Kirim Pesanan</button>
+    <a href="katalog.html" class="link">&larr; Lanjut belanja</a>
+  </div>
+
+  <div id="successWrap" style="display:none;"></div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/cart.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+(async function() {
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+})();
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function ymd(d) {
+  var z = d.getDate(), m = d.getMonth() + 1;
+  return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (z < 10 ? '0' + z : z);
+}
+
+function updateCartBadge() {
+  document.getElementById('cartCount').textContent = KK22_CART.count();
+}
+
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 4000);
+}
+
+function renderCart() {
+  var items = KK22_CART.getItems();
+  var wrap = document.getElementById('cartWrap');
+  var btnSubmit = document.getElementById('btnSubmit');
+
+  if (items.length === 0) {
+    wrap.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="icon">&#128722;</div>' +
+        'Keranjang masih kosong.<br><a href="katalog.html" class="link">Pilih produk dulu</a>' +
+      '</div>';
+    btnSubmit.disabled = true;
+    return;
+  }
+  btnSubmit.disabled = false;
+
+  var html = '<div class="cart-list">';
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    var sub = (Number(it.qty) || 0) * (Number(it.harga_jual) || 0);
+    html +=
+      '<div class="cart-row" data-nama="' + esc(it.nama_produk) + '">' +
+        '<div class="info">' +
+          '<div class="nama">' + esc(it.nama_produk) + '</div>' +
+          '<div class="detail">' + rp(it.harga_jual) + ' / ' + esc(it.satuan || '-') + '</div>' +
+        '</div>' +
+        '<input type="number" min="1" value="' + (it.qty || 1) + '" class="qty-edit">' +
+        '<div class="subtotal">' + rp(sub) + '</div>' +
+        '<button class="btn-del">Hapus</button>' +
+      '</div>';
+  }
+  html += '</div>';
+  html +=
+    '<div class="cart-total">' +
+      '<span>Total (' + KK22_CART.count() + ' item)</span>' +
+      '<span class="amount">' + rp(KK22_CART.total()) + '</span>' +
+    '</div>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.qty-edit').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var row = inp.closest('.cart-row');
+      var nama = row.dataset.nama;
+      var q = Number(inp.value) || 1;
+      KK22_CART.setQty(nama, q);
+      updateCartBadge();
+      renderCart();
+    });
+  });
+
+  wrap.querySelectorAll('.btn-del').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var row = btn.closest('.cart-row');
+      var nama = row.dataset.nama;
+      if (!confirm('Hapus "' + nama + '" dari keranjang?')) return;
+      KK22_CART.remove(nama);
+      updateCartBadge();
+      renderCart();
+    });
+  });
+}
+
+function initTglKirim() {
+  var saved = KK22_CART.getTglKirim();
+  var inp = document.getElementById('tglKirim');
+  var min = new Date(); min.setDate(min.getDate() + 1);
+  inp.min = ymd(min);
+  if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
+    inp.value = saved;
+  } else {
+    var def = new Date(); def.setDate(def.getDate() + 2);
+    inp.value = ymd(def);
+  }
+  inp.addEventListener('change', function() {
+    KK22_CART.setTglKirim(inp.value);
+  });
+}
+
+document.getElementById('btnSubmit').addEventListener('click', async function() {
+  var tgl = document.getElementById('tglKirim').value;
+  var catatan = document.getElementById('catatan').value.trim();
+  var items = KK22_CART.getItems();
+
+  if (items.length === 0) { showAlert('Keranjang kosong.', 'error'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tgl)) { showAlert('Tanggal kirim tidak valid.', 'error'); return; }
+
+  var btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  var origText = btn.textContent;
+  btn.textContent = 'Mengirim...';
+
+  var r = await KK22_API.buatPesanan(KK22_CART.toPayload(), tgl, catatan);
+
+  if (!r.ok) {
+    btn.disabled = false;
+    btn.textContent = origText;
+    showAlert(r.error || 'Gagal membuat pesanan.', 'error');
+    return;
+  }
+
+  // Sukses
+  var d = r.data || {};
+  var orderNo = d.order_number || d.orderNumber || d.id_pesanan || '(tidak ada)';
+  var mode = d.mode || (d.merged ? 'merged' : 'new');
+  var modeLabel = mode === 'merged' ? 'Item digabung ke PO yang sudah ada' : 'PO baru dibuat';
+
+  KK22_CART.clear();
+  updateCartBadge();
+
+  document.getElementById('formWrap').style.display = 'none';
+  var sw = document.getElementById('successWrap');
+  sw.style.display = 'block';
+  sw.innerHTML =
+    '<div class="success-card">' +
+      '<div class="icon">&#9989;</div>' +
+      '<div class="title">Pesanan berhasil!</div>' +
+      '<div>' + esc(modeLabel) + '</div>' +
+      '<div class="order-no">' + esc(orderNo) + '</div>' +
+    '</div>' +
+    '<p style="text-align:center;font-size:13px;color:#666;margin-top:16px;">' +
+      'Simpan nomor pesanan di atas. Cek status di Dashboard.' +
+    '</p>' +
+    '<a href="katalog.html" class="link">&larr; Pesan lagi</a>' +
+    '<a href="dashboard.html" class="link">Ke Dashboard &rarr;</a>';
+});
+
+updateCartBadge();
+initTglKirim();
+renderCart();
+</script>
+</body>
+</html>

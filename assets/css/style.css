@@ -70,3 +70,298 @@ button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .badge-owner { background: #fff3cd; color: #856404; }
 .badge-admin { background: #cce5ff; color: #004085; }
 .badge-reseller { background: #d4edda; color: #155724; }
+
+/* ========================================================================
+   FASE 6 - KATALOG, NAVBAR, CART, FORM
+   ======================================================================== */
+
+/* --- Layout lebar (katalog/pesan) --- */
+body.wide { align-items: flex-start; padding: 16px; }
+.container-wide {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  padding: 24px 20px;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --- Navbar --- */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 4px 16px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.navbar .brand { font-size: 18px; font-weight: 700; color: #333; }
+.navbar .brand .dot { color: #667eea; }
+.navbar .nav-links { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.navbar .nav-links a, .navbar .nav-links button {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #555;
+  background: #f1f3f6;
+  border: none;
+  cursor: pointer;
+  width: auto;
+  margin: 0;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.navbar .nav-links a:hover, .navbar .nav-links button:hover {
+  background: #e2e6ee;
+  transform: none;
+  box-shadow: none;
+  color: #333;
+}
+.navbar .nav-links a.active { background: #667eea; color: white; }
+.navbar .nav-links a.active:hover { background: #5568d3; }
+.navbar .cart-btn { position: relative; }
+.navbar .cart-badge {
+  display: inline-block;
+  background: #e74c3c;
+  color: white;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* --- Search bar + filter --- */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.search-bar input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+  margin: 0;
+}
+.search-bar button {
+  width: auto;
+  margin: 0;
+  padding: 12px 20px;
+  font-size: 14px;
+}
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  align-items: center;
+}
+.filter-row label { margin: 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 500; }
+.filter-row input[type="checkbox"] { margin: 0; }
+.filter-row .count-info { color: #888; margin-left: auto; font-size: 12px; }
+
+/* --- Grid produk --- */
+.produk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+.produk-card {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fafbfd;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.produk-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+.produk-card .img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #e9ecf2 center/cover no-repeat;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.produk-card .nama {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+  line-height: 1.3;
+  min-height: 34px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.produk-card .meta { font-size: 11px; color: #888; margin-bottom: 4px; }
+.produk-card .harga { font-size: 14px; font-weight: 700; color: #667eea; margin-bottom: 8px; }
+.produk-card .stok { font-size: 11px; color: #28a745; font-weight: 600; }
+.produk-card .stok.low { color: #dc3545; }
+.produk-card .actions {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+}
+.produk-card .actions input[type="number"] {
+  width: 56px;
+  padding: 8px 6px;
+  font-size: 13px;
+  text-align: center;
+  margin: 0;
+}
+.produk-card .actions button {
+  flex: 1;
+  padding: 8px 6px;
+  font-size: 12px;
+  margin: 0;
+}
+
+/* --- Empty / loading state --- */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888;
+  font-size: 14px;
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ddd;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Cart list (halaman pesan) --- */
+.cart-list { border: 1px solid #eee; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+.cart-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f3f6;
+  font-size: 13px;
+}
+.cart-row:last-child { border-bottom: none; }
+.cart-row .info { flex: 1; min-width: 0; }
+.cart-row .info .nama { font-weight: 600; color: #333; margin-bottom: 2px; }
+.cart-row .info .detail { font-size: 11px; color: #888; }
+.cart-row input[type="number"] {
+  width: 64px;
+  padding: 6px;
+  text-align: center;
+  margin: 0;
+  font-size: 13px;
+}
+.cart-row .subtotal { font-weight: 700; color: #667eea; min-width: 90px; text-align: right; }
+.cart-row .btn-del {
+  background: #f8d7da;
+  color: #721c24;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  width: auto;
+  margin: 0;
+  font-weight: 600;
+}
+.cart-row .btn-del:hover { background: #f5c6cb; transform: none; box-shadow: none; }
+
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f7f8fa;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.cart-total .amount { color: #667eea; font-size: 18px; }
+
+/* --- Form rows (pesan) --- */
+.form-row { margin-top: 14px; }
+.form-row label { margin-top: 0; }
+.form-row .hint { font-size: 11px; color: #888; margin-top: 4px; }
+textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+}
+textarea:focus { outline: none; border-color: #667eea; }
+input[type="date"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+}
+input[type="date"]:focus { outline: none; border-color: #667eea; }
+
+/* --- Success card (order created) --- */
+.success-card {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 1px solid #b1dfbb;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  margin: 16px 0;
+}
+.success-card .icon { font-size: 40px; margin-bottom: 8px; }
+.success-card .title { font-size: 16px; font-weight: 700; color: #155724; margin-bottom: 6px; }
+.success-card .order-no {
+  font-family: monospace;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #155724;
+  display: inline-block;
+  margin-top: 8px;
+  word-break: break-all;
+}
+
+/* --- Badge status PO --- */
+.badge-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-status.submitted      { background: #cce5ff; color: #004085; }
+.badge-status.partial_locked { background: #fff3cd; color: #856404; }
+.badge-status.locked         { background: #f8d7da; color: #721c24; }
+.badge-status.shipped        { background: #d1ecf1; color: #0c5460; }
+.badge-status.done           { background: #d4edda; color: #155724; }
+.badge-status.cancelled      { background: #e2e3e5; color: #383d41; }
+
+/* --- Responsive tweak --- */
+@media (max-width: 600px) {
+  .container-wide { padding: 16px 12px; }
+  .produk-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .navbar .nav-links a, .navbar .nav-links button { font-size: 12px; padding: 6px 10px; }
+  .cart-row { flex-wrap: wrap; }
+  .cart-row .subtotal { min-width: auto; }
+}
