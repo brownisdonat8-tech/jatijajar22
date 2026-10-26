@@ -1,8 +1,8 @@
 ================================================================
 BACKUP ARSITEKTUR - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
 ================================================================
-Terakhir diupdate : 2026-10-13 18:41
-Versi             : 0.1.0-alpha (Fase 3 selesai sebagian)
+Terakhir diupdate : 2026-10-26 11:27
+Versi             : 0.2.0-alpha (Fase 3 SELESAI)
 Dibuat oleh       : USER + AI assistant
 
 ================================================================
@@ -167,4 +167,41 @@ FASE 15 -> Uji end-to-end
 - Pakai here-string @'...'@ untuk bikin file
 - Prinsip: gratis > bayar, simpel > rumit, user-friendly
 - Mekari adalah source of truth; JANGAN UBAH struktur mirror Mekari
+================================================================
+================================================================
+13. WEBAPP URL & OWNER INFO (UPDATE FASE 3)
+================================================================
+Owner name      : Dony Noviandri
+Owner no_hp     : 6282114188277
+Owner id_user   : KK22-USR-0001
+Owner role      : owner
+
+Web App URL     : https://script.google.com/macros/s/AKfycbx15OsKEz-_XPFF2WN6l4ew2jE3uVWf7i7BeMZE2Bi2olY669YkF_n2ai4CvVvB2zl2ww/exec
+Deploy version  : v0.1.0 - initial API
+Deploy as       : Me (brownisdonat8@gmail.com)
+Who has access  : Anyone
+
+API Status:
+  [DONE] GET  ping     -> {ok:true, version:0.1.0}
+  [DONE] POST login    -> {ok:true, token:...}
+  [DONE] POST whoami   -> {ok:true, user:...}
+  [DONE] POST logout   -> {ok:true}
+
+File Api.gs     : Endpoint utama (doGet, doPost, router, login, session)
+File Auth.gs    : setupAdminPertama, resetPinUser, createUser, findUserByPhone
+
+CATATAN KEAMANAN:
+  PIN admin yang aktif saat ini muncul di log dev -> GANTI sebelum production.
+  Reset PIN: edit RESET_PIN di Auth.gs, jalankan resetPinUser(), lalu
+  ganti RESET_PIN.pinBaru jadi placeholder.
+
+================================================================
+14. NEXT: FASE 4 - ENDPOINT PRODUK & PESANAN
+================================================================
+  [NEXT] getProduk         -> katalog untuk reseller
+  [NEXT] getResellerProfile-> profil reseller
+  [NEXT] buatPesanan       -> create order + stock locking
+  [NEXT] getRiwayatPesanan -> riwayat reseller
+  [NEXT] admin endpoints   -> manage pesanan & produk
+
 ================================================================

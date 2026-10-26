@@ -167,3 +167,70 @@ function testSessionsSheet() {
   const sh = ensureSessionsSheet_();
   Logger.log('Sheet SESSIONS siap. Total baris: ' + sh.getLastRow());
 }
+// ============================================================
+// RESET PIN (untuk admin/owner/reseller yang lupa PIN)
+// ============================================================
+// Cara pakai:
+//   1. Edit nilai RESET_PIN di bawah
+//   2. Jalankan resetPinUser() dari dropdown
+//   3. Login ulang di API dengan PIN baru
+
+const RESET_PIN = {
+  noHp:     '6282114188277',   // <-- no_hp admin kamu
+  pinBaru:  '123456'            // <-- GANTI jadi PIN baru 4-6 karakter
+};
+
+function resetPinUser() {
+  const noHp = normalizePhone_(RESET_PIN.noHp);
+  const pinBaru = String(RESET_PIN.pinBaru);
+
+  if (!noHp || noHp.length < 10) {
+    Logger.log('ERROR: noHp tidak valid: "' + noHp + '"');
+    return;
+  }
+  if (pinBaru.length < CONFIG.PIN.MIN || pinBaru.length > CONFIG.PIN.MAX) {
+    Logger.log('ERROR: PIN baru harus ' + CONFIG.PIN.MIN + '-' + CONFIG.PIN.MAX + ' karakter. Dapat: ' + pinBaru.length);
+    return;
+  }
+
+  const user = findUserByPhone_(noHp);
+  if (!user) {
+    Logger.log('ERROR: nomor HP tidak terdaftar: ' + noHp);
+    Logger.log('       Cek no_hp di sheet USERS.');
+    return;
+  }
+
+  const sheet = getSheet_(CONFIG.SHEETS.USERS);
+  const salt = makeSalt_();
+  const hash = pinHash_(pinBaru, salt);
+  const now = nowJakarta_();
+
+  // Update kolom C (pin_hash, index 3), D (pin_salt, index 4), J (tgl_update, index 10)
+  sheet.getRange(user.rowIndex, 3).setValue(hash);
+  sheet.getRange(user.rowIndex, 4).setValue(salt);
+  sheet.getRange(user.rowIndex, 10).setValue(now);
+
+  // Hapus semua session lama user ini (paksa login ulang)
+  const sess = ensureSessionsSheet_();
+  const last = sess.getLastRow();
+  if (last >= 2) {
+    const data = sess.getRange(2, 1, last - 1, 2).getValues();
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (String(data[i][1]) === String(user.id_user)) {
+        sess.deleteRow(i + 2);
+      }
+    }
+  }
+
+  Logger.log('===== RESET PIN BERHASIL =====');
+  Logger.log('id_user    : ' + user.id_user);
+  Logger.log('no_hp      : ' + user.no_hp);
+  Logger.log('nama       : ' + user.nama_lengkap);
+  Logger.log('role       : ' + user.role);
+  Logger.log('PIN baru   : ' + pinBaru + '   <<< SIMPAN BAIK-BAIK');
+  Logger.log('');
+  Logger.log('PENTING: Setelah reset, buka Auth.gs dan GANTI RESET_PIN.pinBaru');
+  Logger.log('         supaya PIN tidak tertinggal di kode.');
+  Logger.log('');
+  Logger.log('Sekarang TEST LOGIN LAGI via PowerShell dengan PIN baru.');
+}
