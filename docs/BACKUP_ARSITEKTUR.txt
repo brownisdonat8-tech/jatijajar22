@@ -1,8 +1,8 @@
 ================================================================
 BACKUP ARSITEKTUR - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
 ================================================================
-Terakhir diupdate : 2026-10-26 13:50
-Versi             : 0.4.0-alpha (Fase 4.3 selesai)
+Terakhir diupdate : 2026-10-26 14:07
+Versi             : 0.5.0-alpha (Fase 4.4 selesai)
 Dibuat oleh       : USER + AI assistant
 
 ================================================================
@@ -237,10 +237,64 @@ Bug yang sudah di-fix:
 ================================================================
 16. NEXT: FASE 4.4 - ADMIN LOCK & STATUS
 ================================================================
-  [NEXT] lockItemPesanan   -> admin lock 1 atau lebih item per PO
-  [NEXT] unlockItemPesanan -> admin unlock (dengan alasan)
+  [DONE] lockItemPesanan   -> OK + LockService + status auto-update
+  [DONE] unlockItemPesanan -> OK + wajib alasan untuk audit
   [NEXT] updateStatusPesanan -> reseller/admin lihat status per item
   [NEXT] getLockedProduk   -> list produk yang sedang di-lock
-  [NEXT] toggleProdukAktif -> aktif/nonaktifkan produk (soft lock)
+  [DONE] toggleProdukAktif -> OK + soft lock (PO existing tetap)
+
+================================================================
+================================================================
+17. UPDATE FASE 4.4 - ADMIN LOCK & TOGGLE
+================================================================
+File baru:
+  AdminPesanan.gs -> handleLockItemPesanan_, handleUnlockItemPesanan_,
+                     handleToggleProdukAktif_, updateHeaderStatusByRekap_
+
+Endpoint API baru:
+  [DONE] lockItemPesanan    -> Lock 1-N item per PO (LockService 30s)
+  [DONE] unlockItemPesanan  -> Unlock 1 item + wajib isi alasan (audit)
+  [DONE] toggleProdukAktif  -> Soft lock produk (PO existing tetap)
+
+Status header otomatis:
+  * Ada item pending + locked -> status = partial_locked
+  * Semua locked, tidak ada pending -> status = locked
+  * Semua pending -> status = submitted
+  * DONT touch status shipped/done/cancelled
+
+Lock behavior:
+  * Lock 1 atau banyak item sekaligus
+  * Skip item yang sudah locked (dengan alasan)
+  * LockService mencegah race condition 2 admin lock bareng
+
+Toggle produk behavior (Opsi B - approved):
+  * Produk nonaktif -> hilang dari katalog reseller
+  * PO existing dengan produk ini TIDAK terpengaruh
+  * Admin/owner tetap lihat semua produk termasuk nonaktif
+  * Hitung pending_items_affected untuk info ke admin
+
+================================================================
+18. NEXT: FASE 5 - FRONTEND GITHUB PAGES
+================================================================
+Target: halaman login reseller yang bisa diakses via HP
+
+Strategy: serve dari root repo (main branch /)
+  - frontend/index.html    -> /
+  - frontend/assets/       -> /assets/
+  - frontend/pages/        -> /pages/
+  - backend/ & docs/ tetap ada (tidak mengganggu)
+
+Catatan CORS (PENTING untuk frontend):
+  * Apps Script doPost TIDAK handle OPTIONS preflight
+  * Jangan pakai Content-Type: application/json di fetch
+  * Gunakan Content-Type: text/plain + JSON.stringify(body)
+  * Apps Script tetap bisa parse via e.postData.contents
+
+FASE 5 Breakdown:
+  [5.1] Setup GitHub Pages + move frontend files
+  [5.2] Landing page (hello world + API health check)
+  [5.3] Halaman login (no_hp + PIN)
+  [5.4] Connect fetch -> Apps Script, test dari browser
+  [5.5] Simpan token di localStorage, cek whoami
 
 ================================================================
