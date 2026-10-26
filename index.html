@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kunang-kunang 22 - Sistem Pemesanan Reseller</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 40px 30px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+  .logo {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 30px;
+  }
+  .status-box {
+    background: #f7f8fa;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    text-align: left;
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+  }
+  .status-row:last-child { border-bottom: none; }
+  .status-label { color: #666; }
+  .status-value { font-weight: 600; color: #333; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-ok { background: #d4edda; color: #155724; }
+  .badge-err { background: #f8d7da; color: #721c24; }
+  .badge-wait { background: #fff3cd; color: #856404; }
+  button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-login {
+    background: #28a745;
+  }
+  .btn-login:hover { box-shadow: 0 6px 20px rgba(40,167,69,0.4); }
+  .footer {
+    color: #aaa;
+    font-size: 11px;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">🍪</div>
+  <h1>Kunang-kunang 22</h1>
+  <p class="subtitle">Sistem Pemesanan Reseller</p>
+
+  <div class="status-box" id="statusBox">
+    <div class="status-row">
+      <span class="status-label">Status API</span>
+      <span class="status-value"><span class="badge badge-wait" id="badgeStatus">Memeriksa...</span></span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Waktu Server</span>
+      <span class="status-value" id="valTime">-</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Versi Backend</span>
+      <span class="status-value" id="valVersion">-</span>
+    </div>
+  </div>
+
+  <button id="btnCheck" onclick="checkAPI()">🔄 Cek Koneksi API</button>
+  <button class="btn-login" onclick="alert('Halaman login akan tersedia di Fase 5.3')">🔐 Masuk Sebagai Reseller</button>
+
+  <div class="footer">
+    &copy; 2026 Kunang-kunang 22<br>
+    <span id="verApp"></span>
+  </div>
+</div>
+
+<script>
+// ==== KONFIGURASI ====
+const API_URL = 'https://script.google.com/macros/s/AKfycbx15OsKEz-_XPFF2WN6l4ew2jE3uVWf7i7BeMZE2Bi2olY669YkF_n2ai4CvVvB2zl2ww/exec';
+
+// ==== HEALTH CHECK ====
+async function checkAPI() {
+  const btn = document.getElementById('btnCheck');
+  const badge = document.getElementById('badgeStatus');
+  const valTime = document.getElementById('valTime');
+  const valVersion = document.getElementById('valVersion');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Memeriksa...';
+  badge.className = 'badge badge-wait';
+  badge.textContent = 'Memeriksa...';
+  valTime.textContent = '-';
+  valVersion.textContent = '-';
+
+  try {
+    const res = await fetch(API_URL + '?t=' + Date.now(), { method: 'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    if (data.ok) {
+      badge.className = 'badge badge-ok';
+      badge.textContent = 'Online';
+      valTime.textContent = data.time || '-';
+      valVersion.textContent = data.version || '-';
+      document.getElementById('verApp').textContent = 'Backend v' + (data.version || '?');
+    } else {
+      throw new Error('API responded with ok=false');
+    }
+  } catch (err) {
+    badge.className = 'badge badge-err';
+    badge.textContent = 'Error';
+    valTime.textContent = 'Gagal';
+    valVersion.textContent = err.message;
+    console.error('[API check failed]', err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Cek Koneksi API';
+  }
+}
+
+// Auto-check saat halaman load
+window.addEventListener('DOMContentLoaded', function() {
+  checkAPI();
+});
+</script>
+</body>
+</html>
