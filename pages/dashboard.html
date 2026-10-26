@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<div class="container">
+  <div class="logo">🍪</div>
+  <h1 id="greeting">Halo!</h1>
+  <p class="subtitle">Kunang-kunang 22</p>
+
+  <div class="user-info" id="userInfo">
+    <div class="row"><span class="lbl">Status</span><span class="val"><span id="loading" class="badge">Memuat...</span></span></div>
+  </div>
+
+  <div class="alert alert-info show">
+    ✅ Login berhasil. Halaman dashboard reseller lengkap akan hadir di <b>Fase 6</b> (katalog + form pemesanan).
+  </div>
+
+  <button id="btnLogout" class="btn-secondary">Keluar</button>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; <span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+document.getElementById('verApp').textContent = 'v' + KK22_CONFIG.APP_VERSION;
+
+async function init() {
+  const token = KK22_API.getToken();
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const r = await KK22_API.whoami();
+  if (!r.ok) {
+    KK22_API.clearAuth();
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const u = r.data;
+  document.getElementById('greeting').textContent = 'Halo, ' + u.nama_lengkap + '!';
+
+  const roleClass = 'badge badge-' + (u.role === 'owner' ? 'owner' : u.role === 'admin' ? 'admin' : 'reseller');
+  const userInfo = document.getElementById('userInfo');
+  userInfo.innerHTML =
+    '<div class="row"><span class="lbl">ID User</span><span class="val">' + u.id_user + '</span></div>' +
+    '<div class="row"><span class="lbl">Nama</span><span class="val">' + u.nama_lengkap + '</span></div>' +
+    '<div class="row"><span class="lbl">No HP</span><span class="val">' + u.no_hp + '</span></div>' +
+    '<div class="row"><span class="lbl">Role</span><span class="val"><span class="' + roleClass + '">' + u.role + '</span></span></div>' +
+    (u.id_reseller ? '<div class="row"><span class="lbl">ID Reseller</span><span class="val">' + u.id_reseller + '</span></div>' : '');
+}
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+init();
+</script>
+</body>
+</html>

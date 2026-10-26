@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<div class="container">
+  <div class="logo">🔐</div>
+  <h1>Masuk Reseller</h1>
+  <p class="subtitle">Kunang-kunang 22</p>
+
+  <form id="loginForm" autocomplete="off">
+    <label for="noHp">Nomor HP</label>
+    <input type="tel" id="noHp" placeholder="cth: 081234567890" required autofocus>
+
+    <label for="pin">PIN</label>
+    <input type="password" id="pin" placeholder="4-6 digit" required maxlength="6">
+
+    <button type="submit" id="btnLogin">Masuk</button>
+  </form>
+
+  <div class="alert" id="alertBox"></div>
+
+  <a href="../index.html" class="link">&larr; Kembali ke Beranda</a>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22</div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+// Kalau sudah login, langsung redirect ke dashboard
+(async function() {
+  const token = KK22_API.getToken();
+  if (token) {
+    const r = await KK22_API.whoami();
+    if (r.ok) { window.location.href = 'dashboard.html'; return; }
+    KK22_API.clearAuth();
+  }
+})();
+
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnLogin');
+  const alertBox = document.getElementById('alertBox');
+  const noHp = document.getElementById('noHp').value.trim();
+  const pin  = document.getElementById('pin').value.trim();
+
+  alertBox.className = 'alert';
+  alertBox.textContent = '';
+
+  if (!noHp || !pin) {
+    alertBox.className = 'alert alert-error show';
+    alertBox.textContent = 'Nomor HP dan PIN wajib diisi.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Memproses...';
+
+  const r = await KK22_API.login(noHp, pin);
+
+  if (r.ok && r.data && r.data.token) {
+    alertBox.className = 'alert alert-success show';
+    alertBox.textContent = 'Login berhasil. Mengalihkan...';
+    setTimeout(function() { window.location.href = 'dashboard.html'; }, 500);
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Masuk';
+    alertBox.className = 'alert alert-error show';
+    alertBox.textContent = r.error || 'Login gagal. Cek nomor HP & PIN.';
+  }
+});
+</script>
+</body>
+</html>
