@@ -1,8 +1,8 @@
 ================================================================
 BACKUP ARSITEKTUR - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
 ================================================================
-Terakhir diupdate : 2026-10-26 11:51
-Versi             : 0.3.0-alpha (Fase 4.1 selesai)
+Terakhir diupdate : 2026-10-26 13:50
+Versi             : 0.4.0-alpha (Fase 4.3 selesai)
 Dibuat oleh       : USER + AI assistant
 
 ================================================================
@@ -200,8 +200,47 @@ CATATAN KEAMANAN:
 ================================================================
   [DONE] getProduk         -> katalog untuk reseller (502 produk OK)
   [NEXT] getResellerProfile-> profil reseller
-  [NEXT] buatPesanan       -> create order + stock locking
-  [NEXT] getRiwayatPesanan -> riwayat reseller
+  [DONE] buatPesanan       -> create + auto-merge + validasi (8 test PASS)
+  [DONE] getPesanan & getDetailPesanan -> OK
   [NEXT] admin endpoints   -> manage pesanan & produk
+
+================================================================
+================================================================
+15. UPDATE FASE 4.3 - PESANAN ENDPOINTS
+================================================================
+Files:
+  Pesanan.gs   -> handleBuatPesanan_, handleGetPesanan_, handleGetDetailPesanan_
+  PatchSchema.gs -> patchDetailPesananAddStatusItem
+  Maintenance.gs -> resetStokNegatifKeNol, cleanupSemuaPesanan
+
+Endpoint API baru:
+  [DONE] buatPesanan       -> new PO atau auto-merge ke PO existing
+  [DONE] getPesanan        -> list PO (isolasi reseller)
+  [DONE] getDetailPesanan  -> detail + items
+
+Aturan bisnis yang diimplementasi:
+  * 1 reseller max 1 PO aktif per tgl_kirim -> auto-merge
+  * Item baru produk belum ada -> baris baru (pending)
+  * Item produk sudah ada & pending -> qty gabung
+  * Item produk sudah ada & locked -> ditolak
+  * Harga disnapshot dari master saat pesan
+  * Validasi: qty > 0, produk harus ada & aktif, tgl_kirim format YYYY-MM-DD
+  * order_number: {tgl_kirim_YYYYMMDD}_{tgl_pesan_YYYYMMDD}_{HHMM}_{NamaReseller}
+    contoh: 20261028_20261026_1337_2Ratu1RajaBuYeni
+  * Kalau order_number tabrakan -> suffix -02, -03
+  * customer_ref_no: KK22-ORD-NNNN
+  * id_pesanan: KK22-PSN-NNNN
+
+Bug yang sudah di-fix:
+  * Sheet auto-convert string "2026-10-28" jadi Date object -> normalize via toYMD_()
+
+================================================================
+16. NEXT: FASE 4.4 - ADMIN LOCK & STATUS
+================================================================
+  [NEXT] lockItemPesanan   -> admin lock 1 atau lebih item per PO
+  [NEXT] unlockItemPesanan -> admin unlock (dengan alasan)
+  [NEXT] updateStatusPesanan -> reseller/admin lihat status per item
+  [NEXT] getLockedProduk   -> list produk yang sedang di-lock
+  [NEXT] toggleProdukAktif -> aktif/nonaktifkan produk (soft lock)
 
 ================================================================

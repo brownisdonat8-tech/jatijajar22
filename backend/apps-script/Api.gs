@@ -36,6 +36,9 @@ function doPost(e) {
       case 'logout':  return handleLogout_(body);
       case 'whoami':  return handleWhoami_(body);
       case 'getProduk': return handleGetProduk_(body);
+      case 'buatPesanan':        return handleBuatPesanan_(body);
+      case 'getPesanan':         return handleGetPesanan_(body);
+      case 'getDetailPesanan':   return handleGetDetailPesanan_(body);
       default:        return jsonResponse_({ ok: false, error: 'Action tidak dikenal: ' + action });
     }
   } catch (err) {
