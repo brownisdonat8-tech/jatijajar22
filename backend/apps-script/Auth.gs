@@ -210,6 +210,9 @@ function resetPinUser() {
   sheet.getRange(user.rowIndex, 4).setValue(salt);
   sheet.getRange(user.rowIndex, 10).setValue(now);
 
+  // INVALIDATE cache user (PIN berubah)
+  cacheInvalidate_(['user_' + user.id_user]);
+
   // Hapus semua session lama user ini (paksa login ulang)
   const sess = ensureSessionsSheet_();
   const last = sess.getLastRow();
@@ -233,4 +236,76 @@ function resetPinUser() {
   Logger.log('         supaya PIN tidak tertinggal di kode.');
   Logger.log('');
   Logger.log('Sekarang TEST LOGIN LAGI via PowerShell dengan PIN baru.');
+}
+// ============================================================
+// SESSION VALIDATION (CACHED)
+// ============================================================
+// Cache 2 menit untuk hindari baca sheet SESSIONS setiap request.
+// Trade-off: kalau admin logout user paksa, ada delay max 2 menit.
+
+function validateSessionCached_(token) {
+  if (!token) return null;
+
+  const cacheKey = 'session_' + token;
+  let cached = cacheGet_(cacheKey);
+  if (cached) return cached;
+
+  const sh = ensureSessionsSheet_();
+  const last = sh.getLastRow();
+  if (last < 2) return null;
+
+  const data = sh.getRange(2, 1, last - 1, 6).getValues();
+  const now = new Date();
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    if (String(r[0]) === String(token)) {
+      const exp = new Date(String(r[3]).replace(' ', 'T'));
+      if (exp.getTime() < now.getTime()) return null;
+      try {
+        sh.getRange(i + 2, 6).setValue(
+          Utilities.formatDate(now, CONFIG.TZ, 'yyyy-MM-dd HH:mm:ss')
+        );
+      } catch (e) {}
+      const user = {
+        id_user: String(r[1]),
+        role: String(r[2])
+      };
+      // Enrich dengan data user lengkap (dari cache kalau ada)
+      const userFull = getCachedUser_(user.id_user);
+      if (userFull) {
+        cachePut_(cacheKey, userFull, CACHE.TTL_SESSION);
+        return userFull;
+      }
+      cachePut_(cacheKey, user, CACHE.TTL_SESSION);
+      return user;
+    }
+  }
+  return null;
+}
+
+function getCachedUser_(idUser) {
+  const cacheKey = 'user_' + idUser;
+  let cached = cacheGet_(cacheKey);
+  if (cached) return cached;
+
+  const sheet = getSheet_(CONFIG.SHEETS.USERS);
+  const last = sheet.getLastRow();
+  if (last < 2) return null;
+
+  const data = sheet.getRange(2, 1, last - 1, 10).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (String(data[i][0]) === String(idUser)) {
+      const user = {
+        id_user: String(data[i][0]),
+        no_hp: String(data[i][1]),
+        role: String(data[i][4]),
+        id_reseller: String(data[i][5] || ''),
+        nama_lengkap: String(data[i][6]),
+        aktif: data[i][7]
+      };
+      cachePut_(cacheKey, user, CACHE.TTL_SESSION);
+      return user;
+    }
+  }
+  return null;
 }

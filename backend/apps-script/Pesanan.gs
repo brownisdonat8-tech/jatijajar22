@@ -584,3 +584,39 @@ function toYMD_(val) {
   }
   return String(val);
 }
+// ============================================================
+// CACHED: List produk untuk getProduk
+// ============================================================
+
+function getProdukListCached_() {
+  let cached = cacheGet_('produk_list');
+  if (cached) return cached;
+
+  const sh = getSheet_(CONFIG.SHEETS.PRODUK);
+  const last = sh.getLastRow();
+  const items = [];
+  if (last >= 2) {
+    const data = sh.getRange(2, 1, last - 1, 20).getValues();
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      const nama = String(r[0] || '').trim();
+      if (!nama) continue;
+      if (String(r[13] || '').trim() !== 'Barang Jadi') continue;
+
+      items.push({
+        id_produk:    String(r[14] || ''),
+        nama_produk:  nama,
+        kode_sku:     String(r[2] || ''),
+        satuan:       String(r[5] || ''),
+        harga_jual:   Number(r[9]) || 0,
+        stok_tersedia: Number(r[4]) || 0,
+        stok_reserved: Number(r[16]) || 0,
+        stok_available: (Number(r[4]) || 0) - (Number(r[16]) || 0),
+        gambar_url:   String(r[15] || ''),
+        aktif:        String(r[17] || '').toUpperCase() === 'TRUE'
+      });
+    }
+  }
+  cachePut_('produk_list', items, CACHE.TTL_PRODUK);
+  return items;
+}

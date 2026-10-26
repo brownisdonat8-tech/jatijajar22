@@ -1,8 +1,8 @@
 ================================================================
 BACKUP ARSITEKTUR - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
 ================================================================
-Terakhir diupdate : 2026-10-26 14:07
-Versi             : 0.5.0-alpha (Fase 4.4 selesai)
+Terakhir diupdate : 2026-10-26 15:18
+Versi             : 0.5.5-alpha (Fase 5.5 selesai, cache partial)
 Dibuat oleh       : USER + AI assistant
 
 ================================================================
@@ -296,5 +296,24 @@ FASE 5 Breakdown:
   [5.3] Halaman login (no_hp + PIN)
   [5.4] Connect fetch -> Apps Script, test dari browser
   [5.5] Simpan token di localStorage, cek whoami
+
+================================================================
+================================================================
+19. UPDATE FASE 5.4 - 5.5 (CACHE LAYER)
+================================================================
+[DONE] Cache.gs dibuat: cacheGet_, cachePut_, cacheInvalidate_, cacheBust*
+[DONE] validateToken_ -> delegate ke validateSessionCached_ (TTL 2 menit)
+[DONE] handleLogout_  -> invalidate session cache
+[DONE] handleGetProduk_ -> pakai getProdukListCached_ (TTL 5 menit)
+[DONE] handleToggleProdukAktif_ -> cacheBustProduk_ setelah update
+[DONE] resetPinUser -> invalidate user cache
+
+TEST HASIL:
+  LOGIN: 4413 ms | CALL 2 getProduk: 2094 ms (50% faster) | whoami: 1594 ms
+
+MASALAH: cache PRODUK LIST gagal (502 items > 95 KB limit CacheService)
+FIX: Fase 5.6 - compact fields (Opsi A) -> target < 1000 ms
+
+Referensi lengkap: docs/HANDOFF.txt
 
 ================================================================

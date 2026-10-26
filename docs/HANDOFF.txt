@@ -1,0 +1,308 @@
+================================================================
+HANDOFF - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
+Untuk melanjutkan di chat baru dengan AI assistant
+================================================================
+Terakhir diupdate: 2026-10-26 (Fase 5.5 selesai, cache partial)
+Versi            : 0.5.5-alpha
+
+================================================================
+1. CARA KERJA USER (PENTING - IKUTI INI)
+================================================================
+- User bukan programmer profesional, familiar PowerShell + Git + Apps Script
+- Setiap langkah: kasih perintah PowerShell siap COPY-PASTE
+- SELALU sebut TARGET FOLDER di setiap perintah
+- Setelah perintah dijalankan, user akan COPY-PASTE output PowerShell ke chat
+- JANGAN kasih semua langkah sekaligus - tunggu output dulu
+- Kalau ada error: diagnosa dulu, JANGAN langsung ganti pendekatan
+- Pakai here-string @'...'@ untuk bikin file (bukan echo)
+- JANGAN minta screenshot - user selalu kirim text output
+- Setelah tiap sub-fase: commit git + update backup
+- Sering update deployment Apps Script tiap selesai edit .gs
+- Prinsip: gratis > bayar, simpel > rumit, user-friendly
+- User punya 6 akun Gmail, tapi project ini pakai brownisdonat8@gmail.com
+- Setelah edit file .gs di lokal: copy ke clipboard PowerShell 
+  (Get-Content file.gs -Raw | Set-Clipboard), lalu Ctrl+A Ctrl+V di editor
+- Kalau ada masalah syntax: cek dulu apakah ada BOM atau karakter unicode
+  (bisa akibat copy-paste) - pakai cara re-write file dengan UTF8 no-BOM
+
+================================================================
+2. BISNIS
+================================================================
+Nama   : Kunang-kunang 22 (produsen kue)
+Owner  : Dony Noviandri (no_hp: 6282114188277)
+- 2235 reseller (migrasi dari Mekari)
+- 502 produk Barang Jadi (migrasi dari Mekari)
+- 3 admin (rencana), 1 owner
+- Tujuan: cegah overselling, alur PO terpusat, export ke Jurnal Mekari
+- Produksi SETELAH PO terkumpul per produk (BUKAN realtime stock)
+- Model PO: 1 reseller max 1 PO aktif per tgl_kirim (auto-merge)
+
+================================================================
+3. STACK & URL PENTING
+================================================================
+Folder lokal   : C:\Users\USER\Projects\KunangKunang22
+GitHub repo    : https://github.com/brownisdonat8-tech/jatijajar22
+GitHub Pages   : https://brownisdonat8-tech.github.io/jatijajar22/
+Spreadsheet ID : 1cBHDpm1pJWbmxbxExBpTTW4asYgyoTGx5XbITWXvD7M
+Spreadsheet URL: https://docs.google.com/spreadsheets/d/1cBHDpm1pJWbmxbxExBpTTW4asYgyoTGx5XbITWXvD7M/edit
+Apps Script    : https://script.google.com (project: KK22 Backend)
+
+WebApp URL     : https://script.google.com/macros/s/AKfycbx15OsKEz-_XPFF2WN6l4ew2jE3uVWf7i7BeMZE2Bi2olY669YkF_n2ai4CvVvB2zl2ww/exec
+Deploy as      : Me (brownisdonat8@gmail.com)
+Who has access : Anyone
+
+.env.local (gitignored):
+  WEBAPP_URL=https://script.google.com/macros/s/AKfycbx15OsKEz-_XPFF2WN6l4ew2jE3uVWf7i7BeMZE2Bi2olY669YkF_n2ai4CvVvB2zl2ww/exec
+  CURRENT_TOKEN=... (auto-update)
+  CURRENT_USER_ID=KK22-USR-0001
+
+File sumber Mekari (di Google Drive):
+- Product Export : 1Nej89ghERKkvHru8oUZ6A2HudoWO4Gzz
+- Contact Export : 1ni1dO3o3Fafjm4gKHs4xWRyiFh7B5Nkd
+- SO Template    : 14nPMW704wfCaj94DusgrVL01gA36-nes
+
+================================================================
+4. FILE LOKAL APPS SCRIPT
+================================================================
+Folder: C:\Users\USER\Projects\KunangKunang22\backend\apps-script\
+- Config.gs        : SPREADSHEET_ID, PREFIX, TZ, dll
+- Utils.gs         : normalizePhone, nowJakarta, pinHash, toYMD_
+- Setup.gs         : setupAllSheets (9 sheet + header + seed)
+- Migrate.gs       : previewProduk/migrateProduk/previewReseller/migrateReseller
+- Diagnose.gs      : diagnoseReseller (cek struktur file sumber)
+- Auth.gs          : setupAdminPertama, resetPinUser, validateSessionCached_
+- Api.gs           : doGet, doPost, router, login, session, getProdukListCached_
+- Pesanan.gs       : handleBuatPesanan_, handleGetPesanan_, handleGetDetailPesanan_
+- AdminPesanan.gs  : handleLockItemPesanan_, handleUnlockItemPesanan_, handleToggleProdukAktif_
+- PatchSchema.gs   : patchDetailPesananAddStatusItem
+- Maintenance.gs   : resetStokNegatifKeNol, cleanupSemuaPesanan
+- Cache.gs         : cacheGet_, cachePut_, cacheInvalidate_, cacheBust*
+
+FRONTEND (di root repo, setelah Fase 5.1 - di-move dari frontend/):
+- index.html              : Landing + health check API (SUDAH LIVE)
+- pages/login.html        : Login no_hp + PIN (SUDAH LIVE + tested OK)
+- pages/dashboard.html    : Dashboard dummy (SUDAH LIVE + tested OK)
+- assets/js/config.js     : Konfigurasi frontend
+- assets/js/api.js        : Wrapper fetch (CORS workaround text/plain)
+- assets/css/style.css    : CSS shared
+
+BACKUP:
+- Setiap patch: backup otomatis ke _backup_YYYYMMDD_HHMMSS/
+- docs/BACKUP_ARSITEKTUR.txt: dokumentasi lengkap (updated tiap fase)
+- docs/HANDOFF.txt: file ini (untuk buka chat baru)
+
+================================================================
+5. DATABASE - 10 SHEET di "KK22 Database"
+================================================================
+1. USERS           : id_user, no_hp, pin_hash, pin_salt, role, id_reseller, ...
+2. RESELLER        : MIRROR 38 kolom Mekari + 5 kolom tambahan (id_reseller, aktif, ...)
+3. PRODUK          : MIRROR 14 kolom Mekari + 6 kolom tambahan (id_produk, gambar_url, ...)
+4. STOK_LOG        : Audit perubahan stok
+5. PESANAN         : Header PO (order_number, customer_ref_no, status, ...)
+6. DETAIL_PESANAN  : Item per PO + status_item (pending/locked/shipped/done)
+7. LOG_AKTIVITAS   : Audit trail
+8. CONFIG          : key-value
+9. JURNAL_MAPPING  : Mapping export Mekari
+10. SESSIONS       : Token login aktif (auto-create)
+
+Status Data (Fase 5.5):
+- RESELLER : 2235 baris (sudah migrate)
+- PRODUK   : 502 baris (sudah migrate)
+- PESANAN / DETAIL_PESANAN : kosong (setelah cleanup terakhir)
+- USERS    : 1 baris (KK22-USR-0001 Dony Noviandri, owner)
+- SESSIONS : aktif (token-token dari test)
+
+================================================================
+6. ATURAN BISNIS
+================================================================
+PRODUK & RESELLER:
+- nama_produk UNIQUE (kunci Mekari)
+- nama_reseller UNIQUE (DisplayName Mekari)
+- Filter migrate: ProductCategory='Barang Jadi', Type='customer'
+- Soft lock produk = aktif=FALSE (PO existing tetap jalan)
+- Admin/owner LIHAT produk nonaktif, reseller TIDAK
+- Struktur Mekari JANGAN DIUBAH (tambahan selalu di kanan)
+
+PESANAN - AUTO-MERGE:
+- 1 reseller max 1 PO AKTIF per tgl_kirim
+- Kalau ada PO existing same tgl_kirim -> merge:
+  * Produk baru                -> tambah baris (pending)
+  * Produk sudah ada & pending -> qty digabung
+  * Produk sudah ada & locked  -> TOLAK item itu (WA admin)
+- Kalau tgl_kirim beda -> buat PO baru
+- Reseller tidak bisa hapus item locked (WA admin)
+
+ORDER NUMBER FORMAT:
+- {YYYYMMDD_kirim}_{YYYYMMDD_pesan}_{HHMM}_{NamaReseller}
+- Contoh: 20261028_20261026_1337_2Ratu1RajaBuYeni
+- Tabrakan -> suffix -02, -03
+- Normalisasi: hapus spasi+non-alphanumeric, max 25 char, preserve case
+- customer_ref_no: KK22-ORD-NNNN (internal)
+- id_pesanan: KK22-PSN-NNNN (PK)
+
+STATUS ITEM  : pending -> locked -> shipped -> done
+STATUS HEADER:
+- submitted      : semua pending
+- partial_locked : mix pending+locked
+- locked         : semua locked
+- shipped        : sudah dikirim
+- done           : selesai
+- cancelled      : dibatalkan
+- JANGAN touch status shipped/done/cancelled saat rekap
+
+================================================================
+7. ENDPOINT API (SEMUA SUDAH ADA & TESTED)
+================================================================
+[DONE] doGet               : ping health check
+[DONE] login               : no_hp + pin -> token
+[DONE] logout              : invalidate session cache
+[DONE] whoami              : token -> user info
+[DONE] getProduk           : katalog (search q, filter aktif/nonaktif)
+[DONE] buatPesanan         : new/merge + validasi + auto-lock check
+[DONE] getPesanan          : list PO (isolasi reseller)
+[DONE] getDetailPesanan    : header + items
+[DONE] lockItemPesanan     : admin lock 1-N items per PO
+[DONE] unlockItemPesanan   : admin unlock 1 item + alasan wajib
+[DONE] toggleProdukAktif   : admin soft lock produk
+
+Request: POST JSON
+  Headers PowerShell: Content-Type: application/json
+  Headers Browser   : Content-Type: text/plain (CORS workaround!)
+Response: {"ok": bool, "data"?: {...}, "error"?: "..."}
+
+================================================================
+8. STATUS FASE
+================================================================
+SELESAI:
+- Fase 0   : Setup PC, folder, git, GitHub repo
+- Fase 1   : Bikin 9 sheet + header + seed config
+- Fase 2   : Migrasi 502 produk + 2235 reseller dari Mekari
+- Fase 3   : Auth admin + Web App deployed + login/whoami/logout OK
+- Fase 4.1 : getProduk (502 produk, search, auth guard)
+- Fase 4.3 : buatPesanan + auto-merge + getPesanan + getDetail (8 test PASS)
+- Fase 4.4 : lock/unlock/toggle produk (test PASS)
+- Fase 5.1 : Frontend move to root + landing page (GitHub Pages LIVE!)
+- Fase 5.3 : Login page + dashboard dummy (login via browser OK!)
+- Fase 5.4 : Cache.gs dibuat (44 baris, 6 fungsi)
+- Fase 5.5 : Cache AKTIF di validateToken_, handleLogout_,
+             handleGetProduk_, handleToggleProdukAktif_, resetPinUser
+
+TEST CACHE (Fase 5.5 - hasil nyata):
+- LOGIN             : 4413 ms
+- getProduk CALL 1  : 4535 ms (cold)
+- getProduk CALL 2  : 2094 ms (55% faster vs sebelum)
+- getProduk CALL 3  : 2187 ms
+- getProduk CALL 4  : 2986 ms
+- whoami            : 1594 ms (jauh lebih cepat)
+
+================================================================
+9. MASALAH YANG PERLU DI-FIX (FASE 5.6 - MENDESAK)
+================================================================
+DIAGNOSA: Cache PRODUK LIST GAGAL tersimpan.
+Penyebab: 502 items × ~200 bytes ≈ 100 KB > 95 KB limit
+          (CacheService.getScriptCache() max 100 KB per key).
+          cachePut_ return false silently.
+
+BUKTI:
+- whoami 1594 ms -> session cache BEKERJA (turun ~50%)
+- getProduk CALL 2/3/4 masih ~2s -> produk list cache GAGAL
+- Kalau produk list benar-benar cached, targetnya ~500-800 ms
+
+3 OPSI FIX:
+Opsi A (REKOMENDASI): Compact produk list
+  - Cache hanya: id_produk, nama_produk, harga_jual, satuan,
+    gambar_url, aktif, stok_available
+  - Field lain (kode_sku, stok_tersedia, stok_reserved) on-demand
+  - Estimasi: 502 × 80 bytes = ~40 KB -> MASUK limit
+
+Opsi B: Split per chunk
+  - 5 keys: produk_list_0..4 (100 produk per key)
+  - Total ~100 KB tersebar
+  - Logic lebih kompleks
+
+Opsi C: PropertiesService (limit 500 KB)
+  - Lebih lambat dari CacheService
+  - Alternatif kalau A gagal
+
+RENCANA FASE 5.6:
+1. Refactor getProdukListCached_ pakai Opsi A (compact)
+2. Test: getProduk CALL 2 < 1000 ms
+3. Kalau masih > 1s, fallback Opsi B (chunk)
+4. Commit + update backup
+
+================================================================
+10. NEXT FASE
+================================================================
+FASE 5.6 (MENDESAK) : Fix cache produk list (100KB limit)
+FASE 5.7            : Archive system - trigger harian ke Drive XLSX
+                      (PO > 90 hari diarsipkan otomatis jam 02:00)
+FASE 6              : Frontend - katalog produk + form pemesanan
+FASE 7              : Frontend - riwayat & status per PO
+FASE 8              : Dashboard admin - semua PO + lock/unlock
+FASE 9              : Dashboard admin - kelola produk, reseller
+FASE 10             : Dashboard owner - laporan
+FASE 11             : Notifikasi Telegram + WA fallback
+FASE 12             : Export Jurnal Mekari (SO XLSX)
+FASE 12b            : PRINT TEMPLATES (2 SISI):
+  - Report Konsol (reseller): PO sendiri, riwayat, status, print per PO
+  - Report Admin: semua PO, rekap harian/mingguan/bulanan,
+                  print surat jalan, invoice, PO gabungan,
+                  laporan per produk, per reseller
+  - Print via iframe + window.print(), CSS @media print
+FASE 13             : Auto-backup + PWA + offline queue
+FASE 14             : User manual HTML + BACKUP_ARSITEKTUR.txt final
+FASE 15             : Uji end-to-end 8 skenario
+
+================================================================
+11. KHUSUS MEKARI (JANGAN UBIK)
+================================================================
+- Mekari jurnal kunci produk di NAMA PRODUK, bukan ProductCode
+- ProductCode kosong, kode J0001 dst ada di kolom #Barcode
+- Template upload SO (SalesOrderTemplateMCTWUTDACF) 30 kolom
+- CustomerRefNo = ID internal kita (KK22-ORD-NNNN)
+- OrderNumber = format lengkap kita
+- RESELLER mirror 38 kolom Contact Export
+- PRODUK mirror 14 kolom Product Export
+- Tambahan kita SELALU di kanan
+- Reseller = Type='customer'
+- Produk = ProductCategory='Barang Jadi'
+- Exclude: NAMA LAMA#, Reject#, ERP#, #ERP, trailing '.'
+
+================================================================
+12. LIMIT GOOGLE & STRATEGI 3-LAYER
+================================================================
+Google Sheets: max 10 juta cell per spreadsheet
+- 1 PO = ~160 cell -> max ~62.500 PO
+- Volume 50 PO/hari: ~3 tahun, 100 PO/hari: ~1.5 tahun
+
+Layer 1: CacheService     (gratis, instan, TTL pendek)
+Layer 2: KK22 Database    (data 90 hari terakhir)
+Layer 3: Google Drive     (XLSX bulanan, audit)
+Trigger harian 02:00 - PO > 90 hari di-move ke Drive XLSX
+
+Apps Script 90 menit/hari:
+- Cache mengurangi 50-80% waktu
+- Batch write (getValues/setValues), hindari loop per-cell
+
+================================================================
+13. CARA LANJUT DI CHAT BARU
+================================================================
+1. Buka chat baru
+2. Attach file: docs/HANDOFF.txt
+3. Ketik:
+   "Lanjut dari sini. Baca HANDOFF.txt. Fase 5.5 selesai, cache partial.
+    Fix dulu Fase 5.6 (cache produk list 100KB limit) pakai Opsi A,
+    lalu lanjut Fase 5.7 (archive) atau Fase 6 (frontend katalog)."
+
+================================================================
+14. CATATAN KEAMANAN
+================================================================
+- Admin PIN: hash SHA-256 + salt (hanya user yang tahu)
+- Deploy as: Me -> akses Spreadsheet dari akun owner
+- URL WebApp bisa diakses public -> login wajib PIN
+- .env.local berisi TOKEN -> sudah .gitignore
+- Kalau ganti akun Google: deploy ulang, URL baru, update config.js
+
+================================================================
+SELESAI HANDOFF
+================================================================

@@ -117,21 +117,8 @@ function createSession_(user) {
 
 function validateToken_(token) {
   if (!token) return null;
-  const sh = ensureSessionsSheet_();
-  const last = sh.getLastRow();
-  if (last < 2) return null;
-  const data = sh.getRange(2, 1, last - 1, 6).getValues();
-  const now = new Date();
-  for (let i = 0; i < data.length; i++) {
-    const r = data[i];
-    if (String(r[0]) === String(token)) {
-      const exp = new Date(String(r[3]).replace(' ', 'T'));
-      if (exp.getTime() < now.getTime()) return null;
-      try { sh.getRange(i + 2, 6).setValue(Utilities.formatDate(now, CONFIG.TZ, 'yyyy-MM-dd HH:mm:ss')); } catch (e) {}
-      return getUserById_(r[1]);
-    }
-  }
-  return null;
+  // Delegate ke versi cached (2 menit TTL).
+  return validateSessionCached_(token);
 }
 
 function handleWhoami_(body) {
@@ -163,6 +150,7 @@ function handleLogout_(body) {
     for (let i = 0; i < data.length; i++) {
       if (String(data[i][0]) === String(token)) {
         sh.deleteRow(i + 2);
+        cacheBustSession_(token);
         return jsonResponse_({ ok: true });
       }
     }
@@ -275,4 +263,22 @@ function handleGetProduk_(body) {
       items: items
     }
   });
+}
+function readConfigCached_(key) {
+  let all = cacheGet_('config_all');
+  if (!all) {
+    all = {};
+    try {
+      const sh = getSheet_(CONFIG.SHEETS.CONFIG);
+      const last = sh.getLastRow();
+      if (last >= 2) {
+        const data = sh.getRange(2, 1, last - 1, 2).getValues();
+        for (let i = 0; i < data.length; i++) {
+          all[String(data[i][0])] = data[i][1];
+        }
+      }
+    } catch (e) {}
+    cachePut_('config_all', all, CACHE.TTL_CONFIG);
+  }
+  return all[key] || null;
 }

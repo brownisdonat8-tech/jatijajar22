@@ -210,6 +210,9 @@ function handleToggleProdukAktif_(body) {
   sh.getRange(rowIndex, 18).setValue(aktifBaru ? 'TRUE' : 'FALSE');
   sh.getRange(rowIndex, 20).setValue(nowJakarta_());
 
+  // INVALIDATE CACHE agar perubahan langsung terlihat
+  cacheBustProduk_();
+
   logAktivitas_(user, 'toggleProdukAktif',
     namaProduk + ' -> ' + (aktifBaru ? 'aktif' : 'nonaktif'));
 
