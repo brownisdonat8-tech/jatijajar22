@@ -589,12 +589,22 @@ function toYMD_(val) {
 // ============================================================
 
 function getProdukListCached_() {
-  let cached = cacheGet_('produk_list');
-  if (cached) return cached;
+  // Cache compact form (short field names) untuk muat di CacheService 95KB limit.
+  // Map: i=id_produk, n=nama_produk, s=satuan, h=harga_jual,
+  //      sa=stok_available, g=gambar_url, a=aktif
+  const cached = cacheGet_('produk_list');
+  if (cached && cached.length !== undefined) {
+    return cached.map(function(p){
+      return {
+        id_produk: p.i, nama_produk: p.n, satuan: p.s, harga_jual: p.h,
+        stok_available: p.sa, gambar_url: p.g, aktif: p.a
+      };
+    });
+  }
 
   const sh = getSheet_(CONFIG.SHEETS.PRODUK);
   const last = sh.getLastRow();
-  const items = [];
+  const raw = [];
   if (last >= 2) {
     const data = sh.getRange(2, 1, last - 1, 20).getValues();
     for (let i = 0; i < data.length; i++) {
@@ -603,20 +613,28 @@ function getProdukListCached_() {
       if (!nama) continue;
       if (String(r[13] || '').trim() !== 'Barang Jadi') continue;
 
-      items.push({
-        id_produk:    String(r[14] || ''),
-        nama_produk:  nama,
-        kode_sku:     String(r[2] || ''),
-        satuan:       String(r[5] || ''),
-        harga_jual:   Number(r[9]) || 0,
-        stok_tersedia: Number(r[4]) || 0,
-        stok_reserved: Number(r[16]) || 0,
-        stok_available: (Number(r[4]) || 0) - (Number(r[16]) || 0),
-        gambar_url:   String(r[15] || ''),
-        aktif:        String(r[17] || '').toUpperCase() === 'TRUE'
+      raw.push({
+        i:  String(r[14] || ''),
+        n:  nama,
+        s:  String(r[5] || ''),
+        h:  Number(r[9]) || 0,
+        sa: (Number(r[4]) || 0) - (Number(r[16]) || 0),
+        g:  String(r[15] || ''),
+        a:  String(r[17] || '').toUpperCase() === 'TRUE'
       });
     }
   }
-  cachePut_('produk_list', items, CACHE.TTL_PRODUK);
-  return items;
+
+  try {
+    Logger.log('produk_list: items=' + raw.length + ' jsonSize=' + JSON.stringify(raw).length + ' bytes');
+  } catch (e) {}
+  const ok = cachePut_('produk_list', raw, CACHE.TTL_PRODUK);
+  if (!ok) Logger.log('produk_list: CACHE PUT FAILED (size over limit)');
+
+  return raw.map(function(p){
+    return {
+      id_produk: p.i, nama_produk: p.n, satuan: p.s, harga_jual: p.h,
+      stok_available: p.sa, gambar_url: p.g, aktif: p.a
+    };
+  });
 }
