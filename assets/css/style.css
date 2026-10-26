@@ -365,3 +365,41 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
   .cart-row { flex-wrap: wrap; }
   .cart-row .subtotal { min-width: auto; }
 }
+
+/* --- Card UX v2: tombol tambah besar + feedback --- */
+.produk-card .btn-add {
+  width: 100%;
+  padding: 10px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+.produk-card .btn-add:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(102,126,234,0.35);
+}
+.produk-card .btn-add:active {
+  transform: scale(0.96);
+}
+.produk-card .btn-add.pulse {
+  animation: btnPulse 0.35s ease-out;
+}
+@keyframes btnPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(102,126,234,0.4); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+.produk-card.added {
+  background: #eafaf0;
+  border-color: #b1dfbb;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+/* Sembunyikan input qty lama (kalau masih ada) */
+.produk-card .qty-input { display: none; }

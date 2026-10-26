@@ -83,14 +83,19 @@ function showAlert(msg, type) {
 function renderProduk() {
   var q = document.getElementById('q').value.trim().toLowerCase();
   var hideStok0 = document.getElementById('hideStok0').checked;
+  var stok0Count = semuaProduk.filter(function(p) {
+    return (Number(p.stok_available) || 0) <= 0;
+  }).length;
   var filtered = semuaProduk.filter(function(p) {
     if (q && String(p.nama_produk || '').toLowerCase().indexOf(q) === -1) return false;
     if (hideStok0 && (Number(p.stok_available) || 0) <= 0) return false;
     return true;
   });
 
-  document.getElementById('countInfo').textContent =
-    filtered.length + ' dari ' + semuaProduk.length + ' produk' + (lastCached ? ' (cache)' : '');
+  var info = filtered.length + ' dari ' + semuaProduk.length + ' produk';
+  if (hideStok0 && stok0Count > 0) info += ' (' + stok0Count + ' stok 0 disembunyikan)';
+  if (lastCached) info += ' \u00b7 cache';
+  document.getElementById('countInfo').textContent = info;
 
   var wrap = document.getElementById('produkWrap');
   if (filtered.length === 0) {
@@ -107,31 +112,34 @@ function renderProduk() {
       ? 'style="background-image:url(' + safeUrl(p.gambar_url) + ')"'
       : '';
     html +=
-      '<div class="produk-card">' +
+      '<div class="produk-card" data-nama="' + esc(p.nama_produk) + '">' +
         '<div class="img" ' + imgStyle + '></div>' +
         '<div class="nama">' + esc(p.nama_produk) + '</div>' +
         '<div class="meta">' + esc(p.satuan || '-') + '</div>' +
         '<div class="harga">' + rp(p.harga_jual) + '</div>' +
         '<div class="stok ' + stokClass + '">Stok: ' + stok + '</div>' +
-        '<div class="actions">' +
-          '<input type="number" min="1" value="1" class="qty-input">' +
-          '<button class="btn-add" data-nama="' + esc(p.nama_produk) + '">+ Keranjang</button>' +
-        '</div>' +
+        '<button class="btn-add" data-nama="' + esc(p.nama_produk) + '">+ Tambah</button>' +
       '</div>';
   }
   html += '</div>';
   wrap.innerHTML = html;
 
   wrap.querySelectorAll('.btn-add').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var card = btn.closest('.produk-card');
-      var qty = Number(card.querySelector('.qty-input').value) || 1;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
       var nama = btn.dataset.nama;
       var produk = semuaProduk.find(function(p) { return p.nama_produk === nama; });
       if (!produk) return;
-      KK22_CART.add(produk, qty);
+      KK22_CART.add(produk, 1);
       updateCartBadge();
-      showAlert('+' + qty + ' ' + nama + ' ditambahkan ke keranjang', 'success');
+      // Animasi pulse di tombol
+      btn.classList.add('pulse');
+      setTimeout(function() { btn.classList.remove('pulse'); }, 350);
+      // Toast singkat
+      var card = btn.closest('.produk-card');
+      card.classList.add('added');
+      setTimeout(function() { card.classList.remove('added'); }, 400);
+      showAlert('+1 ' + nama, 'success');
     });
   });
 }
