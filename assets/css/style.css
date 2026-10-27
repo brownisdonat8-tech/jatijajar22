@@ -426,7 +426,7 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
   text-align: center;
 }
 
-/* --- Card UX v4: tombol + besar, ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ kecil (75:25) --- */
+/* --- Card UX v4: tombol + besar, ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ kecil (75:25) --- */
 .produk-card .actions-row {
   display: flex;
   gap: 6px;
@@ -661,4 +661,57 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
     height: 42px;
     font-size: 20px;
   }
+}
+
+/* --- Autocomplete Nama Reseller --- */
+.autocomplete-wrap { position: relative; }
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 50;
+  margin-top: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.autocomplete-list .item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f3f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.autocomplete-list .item:last-child { border-bottom: none; }
+.autocomplete-list .item:hover,
+.autocomplete-list .item.active {
+  background: #f0f3fa;
+}
+.autocomplete-list .item .name {
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.autocomplete-list .item .id {
+  font-size: 11px;
+  color: #888;
+  font-family: monospace;
+  flex: 0 0 auto;
+}
+.autocomplete-list .empty {
+  padding: 14px;
+  color: #888;
+  font-size: 13px;
+  text-align: center;
 }

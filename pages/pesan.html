@@ -34,8 +34,11 @@
 
     <div class="form-row" id="rowNamaReseller" style="display:none;">
       <label for="namaReseller">Nama Reseller <span style="color:#dc3545">*</span></label>
-      <input type="text" id="namaReseller" placeholder="cth: 2 Ratu 1 Raja / Bu Yeni" autocomplete="off">
-      <div class="hint">Wajib diisi untuk admin/owner. Nama harus <b>persis sama</b> dengan master reseller (case-insensitive).</div>
+      <div class="autocomplete-wrap">
+        <input type="text" id="namaReseller" placeholder="Ketik nama reseller..." autocomplete="off">
+        <div class="autocomplete-list" id="namaResellerList" style="display:none;"></div>
+      </div>
+      <div class="hint">Ketik untuk cari, lalu tap nama dari daftar.</div>
     </div>
 
     <div class="form-row">
@@ -60,6 +63,112 @@ document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
 
 var currentUser = null;
 
+// ========== AUTOCOMPLETE NAMA RESELLER ==========
+var allResellers = [];
+var filteredResellers = [];
+var activeIdx = -1;
+
+function _escHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+function openResellerList(q) {
+  var list = document.getElementById('namaResellerList');
+  if (!list) return;
+  var ql = String(q || '').trim().toLowerCase();
+  filteredResellers = !ql
+    ? allResellers.slice(0, 50)
+    : allResellers.filter(function(x) {
+        return String(x[1] || '').toLowerCase().indexOf(ql) !== -1;
+      }).slice(0, 50);
+
+  if (filteredResellers.length === 0) {
+    list.innerHTML = '<div class="empty">Tidak ada reseller cocok</div>';
+  } else {
+    var html = '';
+    for (var i = 0; i < filteredResellers.length; i++) {
+      var x = filteredResellers[i];
+      html += '<div class="item" data-idx="' + i + '" data-id="' + _escHtml(x[0]) + '" data-nama="' + _escHtml(x[1]) + '">' +
+        '<span class="name">' + _escHtml(x[1]) + '</span>' +
+        '<span class="id">' + _escHtml(x[0]) + '</span>' +
+        '</div>';
+    }
+    list.innerHTML = html;
+  }
+  list.style.display = 'block';
+  activeIdx = -1;
+
+  list.querySelectorAll('.item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      selectReseller(el.dataset.nama);
+    });
+  });
+}
+
+function closeResellerList() {
+  var list = document.getElementById('namaResellerList');
+  if (list) list.style.display = 'none';
+  activeIdx = -1;
+}
+
+function selectReseller(nama) {
+  var inp = document.getElementById('namaReseller');
+  if (inp) inp.value = nama;
+  closeResellerList();
+}
+
+function _updateActiveItem(items) {
+  items.forEach(function(el, i) {
+    el.classList.toggle('active', i === activeIdx);
+  });
+  if (activeIdx >= 0 && items[activeIdx]) {
+    items[activeIdx].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+async function initResellerAutocomplete() {
+  var inp = document.getElementById('namaReseller');
+  var list = document.getElementById('namaResellerList');
+  if (!inp || !list) return;
+
+  inp.addEventListener('focus', function() { openResellerList(inp.value); });
+  inp.addEventListener('input', function() { openResellerList(inp.value); });
+  inp.addEventListener('keydown', function(e) {
+    if (list.style.display === 'none') {
+      if (e.key === 'ArrowDown') { openResellerList(inp.value); e.preventDefault(); }
+      return;
+    }
+    var items = list.querySelectorAll('.item');
+    if (e.key === 'ArrowDown') {
+      activeIdx = Math.min(activeIdx + 1, items.length - 1);
+      _updateActiveItem(items);
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      activeIdx = Math.max(activeIdx - 1, 0);
+      _updateActiveItem(items);
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
+      if (activeIdx >= 0 && items[activeIdx]) {
+        selectReseller(items[activeIdx].dataset.nama);
+        e.preventDefault();
+      }
+    } else if (e.key === 'Escape') {
+      closeResellerList();
+    }
+  });
+
+  document.addEventListener('click', function(ev) {
+    if (!ev.target.closest('.autocomplete-wrap')) closeResellerList();
+  });
+
+  var r = await KK22_API.getResellerList();
+  if (r.ok && r.data && Array.isArray(r.data.items)) {
+    allResellers = r.data.items;
+  }
+}
+
 (async function() {
   var token = KK22_API.getToken();
   if (!token) { window.location.href = 'login.html'; return; }
@@ -72,6 +181,7 @@ var currentUser = null;
       row.style.display = '';
       var inp = document.getElementById('namaReseller');
       if (inp) inp.required = true;
+      initResellerAutocomplete();
     }
   }
 })();

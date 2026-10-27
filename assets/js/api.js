@@ -160,6 +160,46 @@ window.KK22_API = (function() {
     return call('getDetailPesanan', { token: token, id_pesanan: idPesanan });
   }
 
+  // ========== GET RESELLER LIST (autocomplete) ==========
+  // Cache 24 jam di localStorage untuk instant load berikutnya.
+  async function getResellerList(forceRefresh) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+
+    const KEY = 'kk22_reseller_cache';
+    const TS  = 'kk22_reseller_cache_ts';
+    const TTL = 24 * 60 * 60 * 1000;
+
+    try {
+      const ts = Number(localStorage.getItem(TS) || 0);
+      if (!forceRefresh && ts && (Date.now() - ts < TTL)) {
+        const raw = localStorage.getItem(KEY);
+        if (raw) {
+          const items = JSON.parse(raw);
+          if (Array.isArray(items) && items.length > 0) {
+            return { ok: true, data: { items: items, _localCached: true } };
+          }
+        }
+      }
+    } catch (e) {}
+
+    const r = await call('getResellerList', { token: token });
+    if (r.ok && r.data && Array.isArray(r.data.items)) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(r.data.items));
+        localStorage.setItem(TS, String(Date.now()));
+      } catch (e) {}
+    }
+    return r;
+  }
+
+  function clearResellerCache() {
+    try {
+      localStorage.removeItem('kk22_reseller_cache');
+      localStorage.removeItem('kk22_reseller_cache_ts');
+    } catch (e) {}
+  }
+
   return {
     call: call,
     login: login,
@@ -175,6 +215,8 @@ window.KK22_API = (function() {
     getPesanan: getPesanan,
     getDetailPesanan: getDetailPesanan,
     getProdukCache: getProdukCache,
-    clearProdukCache: clearProdukCache
+    clearProdukCache: clearProdukCache,
+    getResellerList: getResellerList,
+    clearResellerCache: clearResellerCache
   };
 })();
