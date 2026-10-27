@@ -32,6 +32,12 @@
       <div class="hint">Tanggal pengiriman yang diinginkan. Default: H+2 dari hari ini.</div>
     </div>
 
+    <div class="form-row" id="rowNamaReseller" style="display:none;">
+      <label for="namaReseller">Nama Reseller <span style="color:#dc3545">*</span></label>
+      <input type="text" id="namaReseller" placeholder="cth: 2 Ratu 1 Raja / Bu Yeni" autocomplete="off">
+      <div class="hint">Wajib diisi untuk admin/owner. Nama harus <b>persis sama</b> dengan master reseller (case-insensitive).</div>
+    </div>
+
     <div class="form-row">
       <label for="catatan">Catatan (opsional)</label>
       <textarea id="catatan" placeholder="cth: packing rapi, tambahkan kartu ucapan..." maxlength="300"></textarea>
@@ -52,11 +58,22 @@
 <script>
 document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
 
+var currentUser = null;
+
 (async function() {
   var token = KK22_API.getToken();
   if (!token) { window.location.href = 'login.html'; return; }
   var r = await KK22_API.whoami();
   if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  currentUser = r.data;
+  if (currentUser.role === 'admin' || currentUser.role === 'owner') {
+    var row = document.getElementById('rowNamaReseller');
+    if (row) {
+      row.style.display = '';
+      var inp = document.getElementById('namaReseller');
+      if (inp) inp.required = true;
+    }
+  }
 })();
 
 document.getElementById('btnLogout').addEventListener('click', async function() {
@@ -174,12 +191,23 @@ document.getElementById('btnSubmit').addEventListener('click', async function() 
   if (items.length === 0) { showAlert('Keranjang kosong.', 'error'); return; }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tgl)) { showAlert('Tanggal kirim tidak valid.', 'error'); return; }
 
+  var namaReseller = '';
+  if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner')) {
+    var inpNama = document.getElementById('namaReseller');
+    namaReseller = inpNama ? inpNama.value.trim() : '';
+    if (!namaReseller) {
+      showAlert('Nama reseller wajib diisi (login sebagai admin/owner).', 'error');
+      if (inpNama) inpNama.focus();
+      return;
+    }
+  }
+
   var btn = document.getElementById('btnSubmit');
   btn.disabled = true;
   var origText = btn.textContent;
   btn.textContent = 'Mengirim...';
 
-  var r = await KK22_API.buatPesanan(KK22_CART.toPayload(), tgl, catatan);
+  var r = await KK22_API.buatPesanan(KK22_CART.toPayload(), tgl, catatan, namaReseller || undefined);
 
   if (!r.ok) {
     btn.disabled = false;
