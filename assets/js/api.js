@@ -233,6 +233,26 @@ window.KK22_API = (function() {
     });
   }
 
+  // ========== ADMIN: USER MANAGEMENT ==========
+  async function createUser(noHp, pin, role, namaLengkap, idReseller) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('createUser', {
+      token: token,
+      no_hp: noHp,
+      pin: pin,
+      role: role,
+      nama_lengkap: namaLengkap,
+      id_reseller: idReseller || ''
+    });
+  }
+
+  async function listUsers() {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('listUsers', { token: token });
+  }
+
   return {
     call: call,
     login: login,
@@ -253,6 +273,8 @@ window.KK22_API = (function() {
     clearResellerCache: clearResellerCache,
     lockItemPesanan: lockItemPesanan,
     unlockItemPesanan: unlockItemPesanan,
-    toggleProdukAktif: toggleProdukAktif
+    toggleProdukAktif: toggleProdukAktif,
+    createUser: createUser,
+    listUsers: listUsers
   };
 })();

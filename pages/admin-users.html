@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Users - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="admin-pesanan.html">Admin Pesanan</a>
+      <a href="admin-users.html" class="active">Admin Users</a>
+      <a href="admin-produk.html" class="disabled" title="Coming soon">Admin Produk</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Kelola User</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:16px;">Daftar akun admin, marketing, reseller. Owner bisa tambah user baru.</p>
+
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <button id="btnAddUser" class="btn-primary-full" style="flex:1;margin:0;">+ Tambah User</button>
+    <button id="btnRefresh" class="btn-secondary" style="width:auto;margin:0;">Refresh</button>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="userWrap">
+    <div class="empty-state"><span class="spinner"></span> Memuat user...</div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<!-- MODAL: Tambah User -->
+<div id="modalAdd" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Tambah User Baru</h2>
+      <button class="modal-close" id="modalClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label for="inpHp">No HP <span style="color:#dc3545">*</span></label>
+        <input type="tel" id="inpHp" placeholder="cth: 628111111111" autocomplete="off">
+        <div class="hint">Format: 08xx atau 628xx</div>
+      </div>
+      <div class="form-row">
+        <label for="inpNama">Nama Lengkap <span style="color:#dc3545">*</span></label>
+        <input type="text" id="inpNama" placeholder="cth: Admin Test 2" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label for="inpRole">Role <span style="color:#dc3545">*</span></label>
+        <select id="inpRole">
+          <option value="">-- Pilih Role --</option>
+          <option value="admin">Admin</option>
+          <option value="reseller">Reseller</option>
+          <option value="owner">Owner</option>
+        </select>
+      </div>
+      <div class="form-row" id="rowIdReseller" style="display:none;">
+        <label for="inpIdReseller">ID Reseller <span style="color:#dc3545">*</span></label>
+        <input type="text" id="inpIdReseller" placeholder="cth: KK22-RSL-0002" autocomplete="off">
+        <div class="hint">Wajib untuk role reseller. Format: KK22-RSL-NNNN.</div>
+      </div>
+      <div class="form-row">
+        <label for="inpPin">PIN <span style="color:#dc3545">*</span></label>
+        <input type="password" id="inpPin" placeholder="4-6 digit" maxlength="6" autocomplete="new-password">
+      </div>
+      <div id="modalAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modalCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="modalSubmit" type="button" style="flex:1;margin:0;">Buat User</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 4000);
+}
+function showModalAlert(msg, type) {
+  var b = document.getElementById('modalAlert');
+  b.className = 'alert alert-' + (type || 'error') + ' show';
+  b.textContent = msg;
+}
+
+var currentUser = null;
+var allUsers = [];
+
+function renderUsers() {
+  var wrap = document.getElementById('userWrap');
+  if (!allUsers.length) {
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">&#128101;</div>Belum ada user.</div>';
+    return;
+  }
+  var html = '<div class="user-list">';
+  for (var i = 0; i < allUsers.length; i++) {
+    var u = allUsers[i];
+    var roleClass = 'badge badge-' + (u.role === 'owner' ? 'owner' : u.role === 'admin' ? 'admin' : 'reseller');
+    var statusBadge = u.aktif
+      ? '<span class="badge" style="background:#d4edda;color:#155724;">aktif</span>'
+      : '<span class="badge" style="background:#e2e3e5;color:#383d41;">nonaktif</span>';
+    html +=
+      '<div class="user-card">' +
+        '<div class="user-head">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="user-name">' + esc(u.nama_lengkap) + '</div>' +
+            '<div class="user-id">' + esc(u.id_user) + ' &middot; ' + esc(u.no_hp) + '</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">' +
+            '<span class="' + roleClass + '">' + esc(u.role) + '</span>' +
+            statusBadge +
+          '</div>' +
+        '</div>' +
+        (u.id_reseller ? '<div class="user-meta">&#128279; Reseller: <b>' + esc(u.id_reseller) + '</b></div>' : '') +
+      '</div>';
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+async function loadUsers() {
+  document.getElementById('userWrap').innerHTML =
+    '<div class="empty-state"><span class="spinner"></span> Memuat user...</div>';
+  var r = await KK22_API.listUsers();
+  if (!r.ok) {
+    document.getElementById('userWrap').innerHTML =
+      '<div class="empty-state">Gagal memuat: ' + esc(r.error) + '</div>';
+    return;
+  }
+  allUsers = r.data.items || [];
+  renderUsers();
+}
+
+function openModal() {
+  if (!currentUser || currentUser.role !== 'owner') {
+    showAlert('Hanya owner yang bisa menambah user.', 'error');
+    return;
+  }
+  document.getElementById('inpHp').value = '';
+  document.getElementById('inpNama').value = '';
+  document.getElementById('inpRole').value = '';
+  document.getElementById('inpIdReseller').value = '';
+  document.getElementById('inpPin').value = '';
+  document.getElementById('rowIdReseller').style.display = 'none';
+  document.getElementById('modalAlert').className = 'alert';
+  document.getElementById('modalAdd').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modalAdd').style.display = 'none';
+}
+
+document.getElementById('btnAddUser').addEventListener('click', openModal);
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+
+document.getElementById('inpRole').addEventListener('change', function() {
+  var role = this.value;
+  document.getElementById('rowIdReseller').style.display = role === 'reseller' ? '' : 'none';
+});
+
+document.getElementById('modalSubmit').addEventListener('click', async function() {
+  var noHp   = document.getElementById('inpHp').value.trim();
+  var nama   = document.getElementById('inpNama').value.trim();
+  var role   = document.getElementById('inpRole').value;
+  var idRes  = document.getElementById('inpIdReseller').value.trim();
+  var pin    = document.getElementById('inpPin').value.trim();
+
+  if (!noHp) return showModalAlert('No HP wajib diisi.');
+  if (!nama) return showModalAlert('Nama wajib diisi.');
+  if (!role) return showModalAlert('Role wajib dipilih.');
+  if (role === 'reseller' && !idRes) return showModalAlert('ID Reseller wajib untuk role reseller.');
+  if (!pin || pin.length < 4) return showModalAlert('PIN minimal 4 digit.');
+
+  var btn = document.getElementById('modalSubmit');
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Membuat...';
+
+  var r = await KK22_API.createUser(noHp, pin, role, nama, idRes);
+
+  btn.disabled = false;
+  btn.textContent = orig;
+
+  if (!r.ok) {
+    showModalAlert(r.error || 'Gagal membuat user.');
+    return;
+  }
+
+  closeModal();
+  showAlert('User ' + r.data.user.id_user + ' berhasil dibuat!', 'success');
+  await loadUsers();
+});
+
+document.getElementById('btnRefresh').addEventListener('click', async function() {
+  await loadUsers();
+  showAlert('Daftar user diperbarui', 'info');
+});
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role !== 'owner' && r.data.role !== 'admin') {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  currentUser = r.data;
+
+  if (currentUser.role !== 'owner') {
+    document.getElementById('btnAddUser').style.display = 'none';
+  }
+
+  loadUsers();
+})();
+</script>
+</body>
+</html>

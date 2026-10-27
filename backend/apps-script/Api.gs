@@ -43,6 +43,8 @@ function doPost(e) {
       case 'unlockItemPesanan':  return handleUnlockItemPesanan_(body);
       case 'toggleProdukAktif':  return handleToggleProdukAktif_(body);
       case 'getResellerList':    return handleGetResellerList_(body);
+      case 'createUser':         return handleCreateUser_(body);
+      case 'listUsers':          return handleListUsers_(body);
       default:        return jsonResponse_({ ok: false, error: 'Action tidak dikenal: ' + action });
     }
   } catch (err) {

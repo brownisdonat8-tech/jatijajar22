@@ -426,7 +426,7 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
   text-align: center;
 }
 
-/* --- Card UX v4: tombol + besar, ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ kecil (75:25) --- */
+/* --- Card UX v4: tombol + besar, ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ kecil (75:25) --- */
 .produk-card .actions-row {
   display: flex;
   gap: 6px;
@@ -805,4 +805,170 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
   pointer-events: none;
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* --- Fase 8: btn-primary-full (block button) --- */
+.btn-primary-full {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+.btn-primary-full:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+.btn-primary-full:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- Fase 8: Select dropdown --- */
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  background: white;
+  cursor: pointer;
+}
+select:focus { outline: none; border-color: #667eea; }
+
+/* --- Fase 8: User card (list admin users) --- */
+.user-list {
+  display: grid;
+  gap: 10px;
+}
+.user-card {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 14px;
+  background: white;
+}
+.user-card .user-head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.user-card .user-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+.user-card .user-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: #888;
+}
+.user-card .user-meta {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f3f6;
+  font-size: 12px;
+  color: #666;
+}
+.user-card .user-meta b { color: #333; }
+
+/* --- Fase 8: Modal overlay --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalFadeIn 0.15s ease-out;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.modal-box {
+  background: white;
+  border-radius: 14px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+.modal-header h2 {
+  font-size: 16px;
+  color: #333;
+  margin: 0;
+}
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #888;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+.modal-close:hover {
+  background: #f1f3f6;
+  transform: none;
+  box-shadow: none;
+}
+.modal-body {
+  padding: 12px 20px 8px;
+  overflow-y: auto;
+}
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px 16px;
+  border-top: 1px solid #eee;
+}
+.modal-footer button {
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  width: auto;
+}
+.modal-footer .btn-secondary {
+  background: #f1f3f6;
+  color: #555;
+}
+.modal-footer .btn-secondary:hover {
+  background: #e2e6ee;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .modal-overlay { padding: 12px; align-items: flex-end; }
+  .modal-box { max-height: 92vh; border-radius: 14px 14px 0 0; }
 }
