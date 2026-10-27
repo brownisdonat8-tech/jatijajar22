@@ -200,6 +200,39 @@ window.KK22_API = (function() {
     } catch (e) {}
   }
 
+  // ========== ADMIN: LOCK / UNLOCK ITEM PESANAN ==========
+  async function lockItemPesanan(idPesanan, idDetailArray) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('lockItemPesanan', {
+      token: token,
+      id_pesanan: idPesanan,
+      id_detail: idDetailArray
+    });
+  }
+
+  async function unlockItemPesanan(idPesanan, idDetail, alasan) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('unlockItemPesanan', {
+      token: token,
+      id_pesanan: idPesanan,
+      id_detail: idDetail,
+      alasan: alasan
+    });
+  }
+
+  // ========== ADMIN: TOGGLE PRODUK AKTIF ==========
+  async function toggleProdukAktif(idProduk, aktif) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('toggleProdukAktif', {
+      token: token,
+      id_produk: idProduk,
+      aktif: !!aktif
+    });
+  }
+
   return {
     call: call,
     login: login,
@@ -217,6 +250,9 @@ window.KK22_API = (function() {
     getProdukCache: getProdukCache,
     clearProdukCache: clearProdukCache,
     getResellerList: getResellerList,
-    clearResellerCache: clearResellerCache
+    clearResellerCache: clearResellerCache,
+    lockItemPesanan: lockItemPesanan,
+    unlockItemPesanan: unlockItemPesanan,
+    toggleProdukAktif: toggleProdukAktif
   };
 })();
