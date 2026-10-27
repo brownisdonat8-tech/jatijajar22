@@ -18,15 +18,17 @@
     </div>
   </nav>
 
-  <div class="search-bar">
-    <input type="text" id="q" placeholder="Cari produk..." autocomplete="off">
-    <button id="btnSearch">Cari</button>
-    <button id="btnRefresh" class="btn-secondary">Refresh</button>
-  </div>
+  <div class="toolbar-sticky" id="toolbarSticky">
+    <div class="search-bar">
+      <input type="text" id="q" placeholder="Cari produk..." autocomplete="off">
+      <button id="btnSearch">Cari</button>
+      <button id="btnRefresh" class="btn-secondary">Refresh</button>
+    </div>
 
-  <div class="filter-row">
-    <label><input type="checkbox" id="hideStok0" checked> Sembunyikan stok 0</label>
-    <span class="count-info" id="countInfo">-</span>
+    <div class="filter-row">
+      <label><input type="checkbox" id="hideStok0" checked> Sembunyikan stok 0</label>
+      <span class="count-info" id="countInfo">-</span>
+    </div>
   </div>
 
   <div id="alertBox" class="alert"></div>
@@ -43,6 +45,8 @@
   <img id="lightboxImg" src="" alt="">
   <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
+
+<button id="btnBackTop" class="back-top" type="button" aria-label="Kembali ke atas">&#8679;</button>
 
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/api.js"></script>
@@ -101,10 +105,32 @@ function openLightbox(url, caption) {
 function closeLightbox() {
   var lb = document.getElementById('lightbox');
   var img = document.getElementById('lightboxImg');
+  var ph  = document.getElementById('lightboxPlaceholder');
   if (!lb) return;
   lb.style.display = 'none';
-  if (img) img.src = '';
+  if (img) { img.src = ''; img.style.display = ''; }
+  if (ph) ph.style.display = 'none';
   document.body.style.overflow = '';
+}
+
+function openLightboxPlaceholder(caption) {
+  var lb  = document.getElementById('lightbox');
+  var img = document.getElementById('lightboxImg');
+  var cap = document.getElementById('lightboxCaption');
+  if (!lb || !img) return;
+  img.style.display = 'none';
+  var ph = document.getElementById('lightboxPlaceholder');
+  if (!ph) {
+    ph = document.createElement('div');
+    ph.id = 'lightboxPlaceholder';
+    ph.className = 'lightbox-placeholder';
+    ph.innerHTML = '<div class="ph-icon-big">\uD83C\uDF70</div><div class="ph-text">Foto belum tersedia</div>';
+    lb.insertBefore(ph, cap);
+  }
+  ph.style.display = 'flex';
+  cap.textContent = caption || '';
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
 (function initLightbox() {
@@ -148,7 +174,8 @@ function renderProduk() {
     var p = filtered[i];
     var stok = Number(p.stok_available) || 0;
     var stokClass = stok <= 0 ? 'low' : '';
-    var imgStyle = p.gambar_url
+    var imgHas = p.gambar_url && String(p.gambar_url).trim() !== '';
+    var imgStyle = imgHas
       ? 'style="background-image:url(' + safeUrl(p.gambar_url) + ')"'
       : '';
     var cartItem = KK22_CART.findItem(p.nama_produk);
@@ -159,7 +186,9 @@ function renderProduk() {
 
     html +=
       '<div class="produk-card" data-nama="' + esc(p.nama_produk) + '">' +
-        '<div class="img" data-nama="' + esc(p.nama_produk) + '" ' + imgStyle + '></div>' +
+        (imgHas
+            ? '<div class="img" data-nama="' + esc(p.nama_produk) + '" ' + imgStyle + '></div>'
+            : '<div class="img placeholder" data-nama="' + esc(p.nama_produk) + '"><span class="ph-icon">\uD83C\uDF70</span></div>') +
         '<div class="nama">' + esc(p.nama_produk) + '</div>' +
         '<div class="meta">' + esc(p.satuan || '-') + '</div>' +
         '<div class="harga-row">' +
@@ -232,8 +261,12 @@ function renderProduk() {
     img.addEventListener('click', function() {
       var nama = img.dataset.nama;
       var p = semuaProduk.find(function(x) { return x.nama_produk === nama; });
-      if (!p || !p.gambar_url) return;
-      openLightbox(p.gambar_url, p.nama_produk);
+      if (!p) return;
+      if (p.gambar_url && String(p.gambar_url).trim() !== '') {
+        openLightbox(p.gambar_url, p.nama_produk);
+      } else {
+        openLightboxPlaceholder(p.nama_produk);
+      }
     });
   });
 }
@@ -263,6 +296,41 @@ document.getElementById('btnRefresh').addEventListener('click', async function()
 
 updateCartBadge();
 loadProduk(false);
+
+// ========== BACK TO TOP + STICKY STUCK CLASS ==========
+(function initScrollUX() {
+  var btn = document.getElementById('btnBackTop');
+  var tb  = document.getElementById('toolbarSticky');
+  if (!btn) return;
+
+  var lastStuck = false;
+  function onScroll() {
+    var y = window.pageYOffset || document.documentElement.scrollTop;
+    // Show/hide back-to-top
+    if (y > 300) {
+      btn.classList.add('show');
+    } else {
+      btn.classList.remove('show');
+    }
+    // Toggle shadow on sticky toolbar
+    if (tb) {
+      var navH = 68;
+      var stuck = y > (tb.offsetTop - navH - 4);
+      if (stuck !== lastStuck) {
+        lastStuck = stuck;
+        if (stuck) tb.classList.add('stuck');
+        else tb.classList.remove('stuck');
+      }
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  btn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
 </script>
 </body>
 </html>

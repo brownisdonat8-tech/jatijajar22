@@ -426,7 +426,7 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
   text-align: center;
 }
 
-/* --- Card UX v4: tombol + besar, âˆ’ kecil (75:25) --- */
+/* --- Card UX v4: tombol + besar, ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ kecil (75:25) --- */
 .produk-card .actions-row {
   display: flex;
   gap: 6px;
@@ -524,4 +524,141 @@ input[type="date"]:focus { outline: none; border-color: #667eea; }
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
   pointer-events: none;
   word-break: break-word;
+}
+
+/* --- Placeholder produk tanpa gambar --- */
+.produk-card .img.placeholder {
+  background: linear-gradient(135deg, #eef1f7 0%, #e0e5ee 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.produk-card .img.placeholder .ph-icon {
+  font-size: 40px;
+  opacity: 0.45;
+}
+
+/* --- Lightbox placeholder (foto belum tersedia) --- */
+.lightbox-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80vw;
+  max-width: 500px;
+  height: 55vh;
+  max-height: 480px;
+  background: linear-gradient(135deg, #2a2a2a 0%, #181818 100%);
+  border: 2px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.lightbox-placeholder .ph-icon-big {
+  font-size: 110px;
+  opacity: 0.55;
+  margin-bottom: 16px;
+}
+.lightbox-placeholder .ph-text {
+  font-size: 15px;
+  color: #999;
+  letter-spacing: 0.3px;
+}
+
+/* --- Toolbar sticky (search + filter freeze saat scroll) --- */
+.navbar {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 100;
+  padding: 8px 4px 12px;
+  margin: 0 -20px 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.toolbar-sticky {
+  position: sticky;
+  top: 68px;
+  z-index: 90;
+  background: white;
+  margin: 0 -20px 12px -20px;
+  padding: 8px 20px 10px 20px;
+  border-bottom: 1px solid #f1f3f6;
+  transition: box-shadow 0.2s;
+}
+.toolbar-sticky.stuck {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.toolbar-sticky .search-bar {
+  margin-bottom: 8px;
+}
+.toolbar-sticky .filter-row {
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    margin: 0 -12px 0 -12px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+  .toolbar-sticky {
+    top: 60px;
+    margin: 0 -12px 8px -12px;
+    padding: 6px 12px 8px 12px;
+  }
+}
+
+/* --- Back-to-top floating button --- */
+.back-top {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+}
+.back-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.back-top:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(102, 126, 234, 0.55);
+}
+.back-top:active {
+  transform: translateY(0) scale(0.95);
+}
+
+@media (max-width: 600px) {
+  .back-top {
+    bottom: 18px;
+    right: 14px;
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
 }
