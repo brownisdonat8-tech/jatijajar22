@@ -67,6 +67,7 @@ var currentUser = null;
 var allResellers = [];
 var filteredResellers = [];
 var activeIdx = -1;
+var resellerLoadState = 'idle'; // idle | loading | loaded | error
 
 function _escHtml(s) {
   return String(s || '').replace(/[&<>"']/g, function(c) {
@@ -77,6 +78,18 @@ function _escHtml(s) {
 function openResellerList(q) {
   var list = document.getElementById('namaResellerList');
   if (!list) return;
+
+  if (resellerLoadState === 'loading') {
+    list.innerHTML = '<div class="empty"><span class="spinner"></span> Memuat daftar reseller...</div>';
+    list.style.display = 'block';
+    return;
+  }
+  if (resellerLoadState === 'error') {
+    list.innerHTML = '<div class="empty">Gagal memuat. Tutup &amp; buka lagi untuk coba.</div>';
+    list.style.display = 'block';
+    return;
+  }
+
   var ql = String(q || '').trim().toLowerCase();
   filteredResellers = !ql
     ? allResellers.slice(0, 50)
@@ -134,6 +147,7 @@ async function initResellerAutocomplete() {
   if (!inp || !list) return;
 
   inp.addEventListener('focus', function() { openResellerList(inp.value); });
+  inp.addEventListener('click', function() { openResellerList(inp.value); });
   inp.addEventListener('input', function() { openResellerList(inp.value); });
   inp.addEventListener('keydown', function(e) {
     if (list.style.display === 'none') {
@@ -163,11 +177,31 @@ async function initResellerAutocomplete() {
     if (!ev.target.closest('.autocomplete-wrap')) closeResellerList();
   });
 
+  resellerLoadState = 'loading';
   var r = await KK22_API.getResellerList();
   if (r.ok && r.data && Array.isArray(r.data.items)) {
     allResellers = r.data.items;
+    resellerLoadState = 'loaded';
+  } else {
+    resellerLoadState = 'error';
+  }
+  // Kalau list sedang terbuka saat fetch selesai, refresh dengan data baru
+  if (list && list.style.display === 'block') {
+    openResellerList(inp.value);
   }
 }
+
+// ========== DEBUG HELPER (buka Console untuk pakai) ==========
+window.KK22_RESELLER_DEBUG = function() {
+  var list = document.getElementById('namaResellerList');
+  var inp  = document.getElementById('namaReseller');
+  console.log('[KK22 Reseller Debug]');
+  console.log('  state          :', resellerLoadState);
+  console.log('  allResellers   :', allResellers.length);
+  console.log('  filtered       :', filteredResellers.length);
+  console.log('  list exists    :', !!list, '| display:', list ? list.style.display : '-');
+  console.log('  input exists   :', !!inp, '| value:', inp ? inp.value : '-');
+};
 
 (async function() {
   var token = KK22_API.getToken();
