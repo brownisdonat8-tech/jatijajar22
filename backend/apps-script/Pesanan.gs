@@ -478,6 +478,100 @@ function findResellerByName_(nama) {
   return null;
 }
 
+// ============================================================
+// GET RESELLER LIST (untuk autocomplete form pesanan)
+// Admin/owner only. Return compact [id, nama] aktif saja.
+// ============================================================
+function handleGetResellerList_(body) {
+  const user = validateToken_(body.token);
+  if (!user) {
+    return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  }
+  if (user.role !== 'admin' && user.role !== 'owner') {
+    return jsonResponse_({ ok: false, error: 'Hanya admin/owner yang bisa lihat daftar reseller.' });
+  }
+
+  const cached = cacheGet_('reseller_list');
+  if (cached && cached.length !== undefined) {
+    return jsonResponse_({ ok: true, data: { items: cached, _cached: true } });
+  }
+
+  const sh = getSheet_(CONFIG.SHEETS.RESELLER);
+  const last = sh.getLastRow();
+  const items = [];
+  if (last >= 2) {
+    const data = sh.getRange(2, 1, last - 1, 43).getValues();
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      const aktif = String(r[39] || '').toUpperCase() === 'TRUE';
+      if (!aktif) continue;
+      const idR = String(r[38] || '').trim();
+      const namaR = String(r[1] || '').trim();
+      if (!idR || !namaR) continue;
+      items.push([idR, namaR]);
+    }
+  }
+
+  try {
+    Logger.log('reseller_list: items=' + items.length + ' jsonSize=' + JSON.stringify(items).length + ' bytes');
+  } catch (e) {}
+  const ok = cachePut_('reseller_list', items, 3600);
+  if (!ok) Logger.log('reseller_list: CACHE PUT FAILED (size over limit) - frontend will cache locally');
+
+  return jsonResponse_({ ok: true, data: { items: items, _cached: false } });
+}
+
+function cacheBustResellerList_() {
+  cacheInvalidate_(['reseller_list']);
+}
+
+// ============================================================
+// GET RESELLER LIST (untuk autocomplete form pesanan)
+// Admin/owner only. Return compact [id, nama] aktif saja.
+// ============================================================
+function handleGetResellerList_(body) {
+  const user = validateToken_(body.token);
+  if (!user) {
+    return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  }
+  if (user.role !== 'admin' && user.role !== 'owner') {
+    return jsonResponse_({ ok: false, error: 'Hanya admin/owner yang bisa lihat daftar reseller.' });
+  }
+
+  const cached = cacheGet_('reseller_list');
+  if (cached && cached.length !== undefined) {
+    return jsonResponse_({ ok: true, data: { items: cached, _cached: true } });
+  }
+
+  const sh = getSheet_(CONFIG.SHEETS.RESELLER);
+  const last = sh.getLastRow();
+  const items = [];
+  if (last >= 2) {
+    const data = sh.getRange(2, 1, last - 1, 43).getValues();
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      const aktif = String(r[39] || '').toUpperCase() === 'TRUE';
+      if (!aktif) continue;
+      const idR = String(r[38] || '').trim();
+      const namaR = String(r[1] || '').trim();
+      if (!idR || !namaR) continue;
+      items.push([idR, namaR]);
+    }
+  }
+
+  try {
+    Logger.log('reseller_list: items=' + items.length + ' jsonSize=' + JSON.stringify(items).length + ' bytes');
+  } catch (e) {}
+  const ok = cachePut_('reseller_list', items, 3600);
+  if (!ok) Logger.log('reseller_list: CACHE PUT FAILED (size over limit) - frontend will cache locally');
+
+  return jsonResponse_({ ok: true, data: { items: items, _cached: false } });
+}
+
+function cacheBustResellerList_() {
+  cacheInvalidate_(['reseller_list']);
+}
+
 function findPOAktif_(idReseller, tglKirim) {
   const sh = getSheet_(CONFIG.SHEETS.PESANAN);
   const last = sh.getLastRow();

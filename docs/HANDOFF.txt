@@ -2,8 +2,8 @@
 HANDOFF - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
 Untuk melanjutkan di chat baru dengan AI assistant
 ================================================================
-Terakhir diupdate: 2026-10-26 (Fase 5.5 selesai, cache partial)
-Versi            : 0.5.5-alpha
+Terakhir diupdate: 2026-10-27 (Fase 6 selesai, frontend katalog+form LIVE)
+Versi            : 0.6.1-alpha
 
 ================================================================
 1. CARA KERJA USER (PENTING - IKUTI INI)
@@ -199,7 +199,7 @@ TEST CACHE (Fase 5.5 - hasil nyata):
 9. MASALAH YANG PERLU DI-FIX (FASE 5.6 - MENDESAK)
 ================================================================
 DIAGNOSA: Cache PRODUK LIST GAGAL tersimpan.
-Penyebab: 502 items × ~200 bytes ≈ 100 KB > 95 KB limit
+Penyebab: 502 items Ã— ~200 bytes â‰ˆ 100 KB > 95 KB limit
           (CacheService.getScriptCache() max 100 KB per key).
           cachePut_ return false silently.
 
@@ -213,7 +213,7 @@ Opsi A (REKOMENDASI): Compact produk list
   - Cache hanya: id_produk, nama_produk, harga_jual, satuan,
     gambar_url, aktif, stok_available
   - Field lain (kode_sku, stok_tersedia, stok_reserved) on-demand
-  - Estimasi: 502 × 80 bytes = ~40 KB -> MASUK limit
+  - Estimasi: 502 Ã— 80 bytes = ~40 KB -> MASUK limit
 
 Opsi B: Split per chunk
   - 5 keys: produk_list_0..4 (100 produk per key)
@@ -302,6 +302,128 @@ Apps Script 90 menit/hari:
 - URL WebApp bisa diakses public -> login wajib PIN
 - .env.local berisi TOKEN -> sudah .gitignore
 - Kalau ganti akun Google: deploy ulang, URL baru, update config.js
+
+================================================================
+SELESAI HANDOFF
+================================================================
+
+================================================================
+15. UPDATE 2026-10-27 — FASE 6 SELESAI (catatan lengkap)
+================================================================
+
+FASE 5.6 SELESAI (compact cache produk):
+- Cache compact produk_list (short field names: i/n/s/h/sa/g/a)
+- Server-side cached: 0.37-0.71 detik (dari ~1.5-2 detik sebelumnya)
+- Client-side overhead Apps Script ~1 detik (floor, tidak bisa dihindari)
+- Frontend localStorage cache produk (TTL 5 menit) → instant untuk user
+
+FASE 6 SELESAI (Frontend katalog + form pesanan) — Commit history:
+  e767721: Fase 6 awal (katalog + form + cart + localStorage produk cache)
+  7b5e89a: UX v2 (tap-to-add, tanpa input number)
+  84a705f: UX v3 (qty badge + foto landscape 2:1 + counter stok 0)
+  ebb3d9f: UX v4 (tombol +/- 75:25 + lightbox foto produk + badge live)
+  2970d7f: UX v5 (lightbox placeholder + sticky toolbar + back-to-top)
+  aaf21d6: Fix form pesanan dukung admin/owner (field nama reseller)
+  c92e616: Autocomplete nama reseller (dropdown + localStorage cache 24h)
+  b7b0079: Fix autocomplete desktop (click handler + loading state + debug)
+  Semua sudah di-push ke origin/main
+
+FILE BARU / DIUBAH:
+- pages/katalog.html (BARU):
+  * Grid produk responsive, foto landscape 2:1
+  * Placeholder visual (emoji kue) untuk produk tanpa gambar_url
+  * Lightbox foto + placeholder fallback
+  * Tombol + (besar) / − (kecil) untuk add/remove cart
+  * Qty badge live di samping harga
+  * Sticky navbar + toolbar (search + filter sticky saat scroll)
+  * Back-to-top button (pojok kanan bawah, muncul setelah scroll 300px)
+  * Counter stok 0 transparan ("N stok 0 disembunyikan")
+  * localStorage cache produk 5 menit → reload instant
+
+- pages/pesan.html (BARU):
+  * Keranjang dengan qty editor + hapus
+  * Tanggal kirim default H+2
+  * Catatan opsional
+  * Success card + order number tampil
+  * Autocomplete nama reseller (KHUSUS admin/owner, reseller TIDAK lihat)
+  * Loading state + debug helper: KK22_RESELLER_DEBUG() di console
+  * Reseller login: field tidak tampil, submit pakai id_reseller dari token
+
+- pages/dashboard.html (update):
+  * Navbar baru dengan cart badge
+  * 2 tile menu (Katalog, Keranjang)
+  * Emoji fix (0 rusak dari hasil copy-paste sebelumnya)
+
+- assets/js/cart.js (BARU):
+  * Cart helper dengan localStorage persistence
+  * toPayload() siap kirim ke buatPesanan
+
+- assets/js/config.js: v0.6.0, tambah STORAGE_KEY_PRODUK_CACHE,
+  STORAGE_KEY_CART, TTL_PRODUK_MS
+
+- assets/js/api.js: getProduk, buatPesanan, getPesanan, getDetailPesanan,
+  getProdukCache, getResellerList, clearProdukCache, clearResellerCache
+
+- assets/css/style.css: extended (navbar, katalog grid, produk card,
+  cart, form, autocomplete, lightbox, back-to-top, sticky toolbar)
+
+ENDPOINT BACKEND BARU (Api.gs + Pesanan.gs):
+- getResellerList (admin/owner only):
+  * Return compact [[id,nama], ...] aktif
+  * Server cache 1 jam + frontend localStorage 24 jam
+  * 2235 reseller aktif, cold: 2694 ms, cached: 1756 ms
+  * Handler di Pesanan.gs (line ~485), route di Api.gs (setelah toggleProdukAktif)
+
+BACKLOG FASE 9 — MENU SETTINGS ADMIN (permintaan user 2026-10-27):
+
+1. HARGA KHUSUS PER RESELLER
+   - Bulk + cash pricing, bisa lebih rendah dari harga_jual default
+   - Tabel baru: RESELLER_HARGA (id_reseller, nama_produk, harga_khusus, ...)
+   - Endpoint: setHargaKhusus (admin/owner only)
+   - getProduk: kalau user.role=reseller & ada harga_khusus → override harga_jual
+   - UI: admin pilih reseller → list produk → set harga
+
+2. VISIBILITAS PRODUK PER RESELLER (MAKLON)
+   - Ada produk maklon yang hanya untuk reseller tertentu
+   - Kolom baru RESELLER.produk_mode: 'all' (default) / 'whitelist'
+   - Tabel baru: RESELLER_PRODUK (id_reseller, nama_produk)
+   - getProduk: kalau user.produk_mode=whitelist → hanya tampilkan whitelist
+   - UI: admin pilih reseller → checklist produk yang boleh dilihat
+
+3. ROLE MANAGEMENT UI (data-driven)
+   - Menu admin: kelola user (list USERS)
+   - Edit role via dropdown: owner / admin / marketing / reseller
+   - Role list disimpan di sheet CONFIG (bukan hardcode)
+     → tambah role baru cukup edit CONFIG, tidak perlu deploy ulang
+   - Endpoint: updateUserRole (owner-only)
+   - Catatan: role 'marketing' BELUM dibuat. Sementara user marketing
+     pakai role 'admin' sampai Fase 9 (tidak ada hardcode baru)
+
+4. UPLOAD FOTO PRODUK
+   - Form admin: ambil foto kamera HP (input type=file capture=environment)
+     atau upload file biasa
+   - Simpan ke Google Drive (folder dedicated) → URL publik
+   - Update PRODUK.gambar_url via admin UI
+   - Katalog frontend otomatis pakai gambar (tidak ada perubahan kode)
+
+BACKLOG FASE 10 — REGISTRASI RESELLER:
+- User daftar mandiri di landing page
+- Wajib verifikasi: user+pass match ke reseller yang sudah ada
+- Admin approve → aktifkan akun
+- Link USERS.id_reseller ke RESELLER.id_reseller
+- Endpoint: register, verifyRegistration, approveUser
+
+STATUS FASE SAAT INI:
+- Selesai: Fase 0, 1, 2, 3, 4.1, 4.3, 4.4, 5.1, 5.3, 5.4, 5.5, 5.6
+- Selesai: Fase 6.1-6.24 (katalog + form + autocomplete + UX batch + HANDOFF)
+- Next: Fase 7 (riwayat) atau Fase 8 (admin lock/unlock)
+
+CATATAN DEPLOY APPS SCRIPT:
+- Api.gs + Pesanan.gs sudah di-paste ke Apps Script editor
+- Deploy versi: "Fase 6.23: endpoint getResellerList"
+- URL WebApp TIDAK BERUBAH
+- Commit file backend ini menyusul bersama HANDOFF update
+
 
 ================================================================
 SELESAI HANDOFF
