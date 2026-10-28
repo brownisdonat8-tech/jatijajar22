@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesanan Saya - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="katalog.html">Katalog</a>
+      <a href="pesan.html" class="cart-btn">Keranjang <span class="cart-badge" id="cartCount">0</span></a>
+      <a href="pesanan-saya.html" class="active">Pesanan Saya</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Pesanan Saya</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:16px;">Riwayat semua pesanan Anda. Tap untuk lihat detail atau duplikat.</p>
+
+  <div class="tabs" id="tabs">
+    <button class="active" data-status="">Semua</button>
+    <button data-status="submitted">Pending</button>
+    <button data-status="partial_locked">Diproses</button>
+    <button data-status="locked">Siap Kirim</button>
+    <button data-status="shipped">Dikirim</button>
+    <button data-status="done">Selesai</button>
+  </div>
+
+  <div class="search-bar" style="margin-bottom:12px;">
+    <input type="text" id="q" placeholder="Cari order number..." autocomplete="off">
+    <button id="btnRefresh" class="btn-secondary">Refresh</button>
+  </div>
+
+  <div class="filter-row" style="margin-bottom:8px;">
+    <span class="count-info" id="countInfo">-</span>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="poWrap">
+    <div class="empty-state"><span class="spinner"></span> Memuat pesanan...</div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/cart.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+document.getElementById('cartCount').textContent = KK22_CART.count();
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function fmtTgl(s) {
+  if (!s) return '-';
+  try {
+    var d = new Date(s + 'T00:00:00');
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch (e) { return s; }
+}
+function fmtTglShort(s) {
+  if (!s) return '-';
+  try {
+    var d = new Date(s + 'T00:00:00');
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+  } catch (e) { return s; }
+}
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 3500);
+}
+
+var semuaPO = [];
+var activeStatus = '';
+
+// Label & warna badge per status
+var STATUS_INFO = {
+  submitted:      { label: 'Pending',    cls: 'submitted' },
+  partial_locked: { label: 'Diproses',   cls: 'partial_locked' },
+  locked:         { label: 'Siap Kirim', cls: 'locked' },
+  shipped:        { label: 'Dikirim',    cls: 'shipped' },
+  done:           { label: 'Selesai',    cls: 'done' },
+  cancelled:      { label: 'Batal',      cls: 'cancelled' }
+};
+function statusLabel(st) {
+  var s = String(st || 'submitted').toLowerCase();
+  return STATUS_INFO[s] ? STATUS_INFO[s].label : st;
+}
+
+function renderPO() {
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var filtered = semuaPO.filter(function(p) {
+    if (activeStatus && String(p.status).toLowerCase() !== activeStatus) return false;
+    if (q) {
+      var hay = (String(p.order_number || '') + ' ' + String(p.customer_ref_no || '')).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+
+  var info = filtered.length + ' dari ' + semuaPO.length + ' pesanan';
+  if (activeStatus) info += ' · filter: ' + statusLabel(activeStatus);
+  document.getElementById('countInfo').textContent = info;
+
+  var wrap = document.getElementById('poWrap');
+  if (filtered.length === 0) {
+    var icon = semuaPO.length === 0 ? '&#128230;' : '&#128269;';
+    var msg = semuaPO.length === 0
+      ? 'Belum ada pesanan. Yuk mulai dari <a href="katalog.html" style="color:#667eea;">Katalog</a>.'
+      : 'Tidak ada pesanan dengan filter ini.';
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">' + icon + '</div>' + msg + '</div>';
+    return;
+  }
+
+  var html = '<div class="po-list">';
+  for (var i = 0; i < filtered.length; i++) {
+    var p = filtered[i];
+    var st = String(p.status || 'submitted').toLowerCase();
+    var stInfo = STATUS_INFO[st] || { label: st, cls: st };
+    var tglKirim = fmtTgl(p.tgl_kirim);
+    var tglKirimShort = fmtTglShort(p.tgl_kirim);
+    var isPast = p.tgl_kirim && (new Date(p.tgl_kirim) < new Date().setHours(0,0,0,0));
+
+    html +=
+      '<div class="po-card-reseller" data-id="' + esc(p.id_pesanan) + '">' +
+        '<div class="po-cr-tgl">' +
+          '<div class="po-cr-tgl-day">' + tglKirimShort.split(' ')[0] + '</div>' +
+          '<div class="po-cr-tgl-month">' + (tglKirimShort.split(' ')[1] || '') + '</div>' +
+        '</div>' +
+        '<div class="po-cr-body">' +
+          '<div class="po-cr-head">' +
+            '<div class="po-cr-title">Kirim: <b>' + tglKirim + '</b>' + (isPast ? ' <span style="color:#dc3545;font-size:11px;">(lewat)</span>' : '') + '</div>' +
+            '<span class="badge-status ' + stInfo.cls + '">' + esc(stInfo.label) + '</span>' +
+          '</div>' +
+          '<div class="po-cr-order">' + esc(p.order_number) + '</div>' +
+          '<div class="po-cr-meta">' +
+            '<span>&#128230; ' + (p.total_item || 0) + ' item &middot; ' + (p.total_qty || 0) + ' qty</span>' +
+            '<span class="po-cr-price">' + rp(p.total_harga) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="po-cr-arrow">&#8250;</div>' +
+      '</div>';
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.po-card-reseller').forEach(function(el) {
+    el.addEventListener('click', function() {
+      window.location.href = 'pesanan-saya-detail.html?id=' + encodeURIComponent(el.dataset.id);
+    });
+  });
+}
+
+async function loadPO() {
+  document.getElementById('poWrap').innerHTML =
+    '<div class="empty-state"><span class="spinner"></span> Memuat pesanan...</div>';
+  var r = await KK22_API.getPesanan();
+  if (!r.ok) {
+    document.getElementById('poWrap').innerHTML =
+      '<div class="empty-state">Gagal memuat: ' + esc(r.error) + '</div>';
+    return;
+  }
+  semuaPO = r.data.items || [];
+  renderPO();
+}
+
+document.getElementById('q').addEventListener('input', renderPO);
+document.getElementById('btnRefresh').addEventListener('click', async function() {
+  await loadPO();
+  showAlert('Pesanan diperbarui', 'info');
+});
+
+document.querySelectorAll('#tabs button').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#tabs button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeStatus = btn.dataset.status || '';
+    renderPO();
+  });
+});
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role === 'admin' || r.data.role === 'owner') {
+    window.location.href = 'admin-pesanan.html';
+    return;
+  }
+  loadPO();
+})();
+</script>
+</body>
+</html>

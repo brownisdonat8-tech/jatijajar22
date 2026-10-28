@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detail Pesanan - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="katalog.html">Katalog</a>
+      <a href="pesan.html" class="cart-btn">Keranjang <span class="cart-badge" id="cartCount">0</span></a>
+      <a href="pesanan-saya.html" class="active">Pesanan Saya</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+    <a href="pesanan-saya.html" class="link" style="margin:0;">&larr; Pesanan Saya</a>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="detailWrap">
+    <div class="empty-state"><span class="spinner"></span> Memuat detail...</div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/cart.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+document.getElementById('cartCount').textContent = KK22_CART.count();
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function fmtTgl(s) {
+  if (!s) return '-';
+  try {
+    var d = new Date(s + 'T00:00:00');
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch (e) { return s; }
+}
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 4000);
+}
+
+var idPesanan = '';
+var currentData = null;
+
+var STATUS_INFO = {
+  submitted:      { label: 'Pending',    cls: 'submitted' },
+  partial_locked: { label: 'Diproses',   cls: 'partial_locked' },
+  locked:         { label: 'Siap Kirim', cls: 'locked' },
+  shipped:        { label: 'Dikirim',    cls: 'shipped' },
+  done:           { label: 'Selesai',    cls: 'done' },
+  cancelled:      { label: 'Batal',      cls: 'cancelled' }
+};
+
+function getQueryParam(name) {
+  var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+}
+
+function renderTimeline(status) {
+  var st = String(status || 'submitted').toLowerCase();
+  var steps = [
+    { key: 'submitted', label: 'Dipesan',    icon: '\u2705' },
+    { key: 'locked',    label: 'Diproses',   icon: '\uD83D\uDD12' },
+    { key: 'shipped',   label: 'Dikirim',    icon: '\uD83D\uDE9A' },
+    { key: 'done',      label: 'Selesai',    icon: '\uD83C\uDF89' }
+  ];
+  // Mapping status current → index step aktif
+  var activeIdx = 0;
+  if (st === 'submitted') activeIdx = 0;
+  else if (st === 'partial_locked' || st === 'locked') activeIdx = 1;
+  else if (st === 'shipped') activeIdx = 2;
+  else if (st === 'done') activeIdx = 3;
+  else if (st === 'cancelled') activeIdx = -1;
+
+  var html = '<div class="timeline">';
+  if (st === 'cancelled') {
+    html += '<div class="timeline-cancelled">Pesanan dibatalkan</div>';
+  } else {
+    for (var i = 0; i < steps.length; i++) {
+      var done = i < activeIdx;
+      var current = i === activeIdx;
+      var cls = 'tl-step' + (done ? ' done' : '') + (current ? ' current' : '');
+      html += '<div class="' + cls + '">' +
+        '<div class="tl-dot">' + (done ? '\u2713' : steps[i].icon) + '</div>' +
+        '<div class="tl-label">' + steps[i].label + '</div>' +
+      '</div>';
+      if (i < steps.length - 1) {
+        html += '<div class="tl-line' + (done ? ' done' : '') + '"></div>';
+      }
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderDetail() {
+  if (!currentData) return;
+  var h = currentData.header;
+  var items = currentData.items || [];
+  var st = String(h.status || 'submitted').toLowerCase();
+  var stInfo = STATUS_INFO[st] || { label: st, cls: st };
+
+  var wrap = document.getElementById('detailWrap');
+  var html = '';
+
+  // --- Header ---
+  html += '<div class="po-detail-header">';
+  html += '<div class="po-detail-title">' + esc(h.order_number) + '</div>';
+  html += '<div class="po-detail-sub">' + esc(h.customer_ref_no) + '</div>';
+  html += '<div class="po-detail-grid">';
+  html += '<div><span class="lbl">Reseller</span><span class="val">' + esc(h.nama_reseller) + '</span></div>';
+  html += '<div><span class="lbl">Tgl Pesan</span><span class="val">' + fmtTgl(h.tgl_pesan) + '</span></div>';
+  html += '<div><span class="lbl">Tgl Kirim</span><span class="val">' + fmtTgl(h.tgl_kirim) + '</span></div>';
+  html += '<div><span class="lbl">Status</span><span class="val"><span class="badge-status ' + stInfo.cls + '">' + esc(stInfo.label) + '</span></span></div>';
+  html += '<div><span class="lbl">Total</span><span class="val">' + (h.total_item||0) + ' item &middot; ' + (h.total_qty||0) + ' qty</span></div>';
+  html += '<div><span class="lbl">Total Harga</span><span class="val"><b>' + rp(h.total_harga) + '</b></span></div>';
+  html += '</div>';
+  if (h.catatan) html += '<div class="po-detail-note"><b>Catatan:</b> ' + esc(h.catatan) + '</div>';
+  html += '</div>';
+
+  // --- Timeline ---
+  html += '<div class="timeline-wrap">' + renderTimeline(st) + '</div>';
+
+  // --- Action bar (duplikat) ---
+  html += '<div class="po-action-bar">';
+  html += '<div style="font-size:13px;color:#666;">Duplikat ke keranjang untuk pesan ulang</div>';
+  html += '<button id="btnDuplikat" class="btn-primary-full" style="width:auto;margin:0;padding:10px 18px;font-size:14px;">\uD83D\uDD04 Duplikat Pesanan</button>';
+  html += '</div>';
+
+  // --- Items ---
+  if (items.length === 0) {
+    html += '<div class="empty-state">PO ini tidak memiliki item.</div>';
+  } else {
+    html += '<div class="po-items">';
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var itStatus = String(it.status_item || 'pending').toLowerCase();
+      var itInfo = STATUS_INFO[itStatus];
+      var itLabel = itInfo ? itInfo.label : itStatus;
+      var rowClass = 'po-item-row';
+      if (itStatus === 'locked') rowClass += ' locked';
+      else if (itStatus === 'shipped' || itStatus === 'done') rowClass += ' done';
+
+      html += '<div class="' + rowClass + '">';
+      html += '<div class="po-item-info">';
+      html += '<div class="po-item-name">' + esc(it.nama_produk) + '</div>';
+      html += '<div class="po-item-meta">' + it.qty + ' ' + esc(it.satuan||'') + ' &times; ' + rp(it.harga_saat_pesan) + ' = <b>' + rp(it.subtotal) + '</b></div>';
+      html += '</div>';
+      html += '<div class="po-item-status">';
+      html += '<span class="badge-status ' + (itInfo ? itInfo.cls : itStatus) + '">' + esc(itLabel) + '</span>';
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  wrap.innerHTML = html;
+
+  // Handler duplikat
+  var btnDup = document.getElementById('btnDuplikat');
+  if (btnDup) {
+    btnDup.addEventListener('click', doDuplikat);
+  }
+}
+
+async function doDuplikat() {
+  if (!currentData || !currentData.items || currentData.items.length === 0) {
+    showAlert('Tidak ada item untuk diduplikat.', 'error');
+    return;
+  }
+
+  var items = currentData.items;
+  if (!confirm('Duplikat ' + items.length + ' item ke keranjang?\n\nItem yang nonaktif/tidak ada di katalog akan dilewati. Isi keranjang yang sudah ada akan digabung.')) return;
+
+  // Ambil daftar produk aktif (cache lokal / fetch baru)
+  var r = await KK22_API.getProduk('', false);
+  if (!r.ok) {
+    showAlert('Gagal memuat katalog: ' + r.error, 'error');
+    return;
+  }
+  var aktifMap = {};
+  (r.data.items || []).forEach(function(p) {
+    if (p.aktif) aktifMap[String(p.nama_produk).toLowerCase()] = p;
+  });
+
+  var ditambah = [];
+  var dilewati = [];
+
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    var key = String(it.nama_produk).toLowerCase();
+    var prod = aktifMap[key];
+    if (!prod) {
+      dilewati.push(it.nama_produk);
+      continue;
+    }
+    KK22_CART.add(prod, Number(it.qty) || 1);
+    ditambah.push({ nama: it.nama_produk, qty: it.qty });
+  }
+
+  if (ditambah.length === 0) {
+    showAlert('Semua item dilewati (nonaktif/tidak ada di katalog). Tidak ada yang bisa diduplikat.', 'error');
+    return;
+  }
+
+  // Simpan info duplikat ke sessionStorage untuk ditampilkan di pesan.html
+  try {
+    sessionStorage.setItem('kk22_dup_info', JSON.stringify({
+      ditambah: ditambah.length,
+      dilewati: dilewati
+    }));
+  } catch (e) {}
+
+  // Redirect ke halaman pesan
+  window.location.href = 'pesan.html';
+}
+
+async function loadDetail() {
+  if (!idPesanan) {
+    document.getElementById('detailWrap').innerHTML = '<div class="empty-state">ID pesanan tidak ditemukan di URL.</div>';
+    return;
+  }
+  document.getElementById('detailWrap').innerHTML =
+    '<div class="empty-state"><span class="spinner"></span> Memuat detail...</div>';
+  var r = await KK22_API.getDetailPesanan(idPesanan);
+  if (!r.ok) {
+    document.getElementById('detailWrap').innerHTML =
+      '<div class="empty-state">Gagal memuat: ' + esc(r.error) + '</div>';
+    return;
+  }
+  currentData = r.data;
+  renderDetail();
+}
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  idPesanan = getQueryParam('id');
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role === 'admin' || r.data.role === 'owner') {
+    window.location.href = 'admin-pesanan-detail.html?id=' + encodeURIComponent(idPesanan);
+    return;
+  }
+  loadDetail();
+})();
+</script>
+</body>
+</html>

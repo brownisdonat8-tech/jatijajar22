@@ -20,6 +20,8 @@
 
   <div id="alertBox" class="alert"></div>
 
+  <div id="dupInfoWrap"></div>
+
   <div id="formWrap">
     <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Form Pemesanan</h1>
     <p style="color:#888;font-size:13px;margin-bottom:16px;">Pesanan akan digabung otomatis bila sudah ada PO aktif untuk tanggal kirim yang sama.</p>
@@ -389,6 +391,43 @@ document.getElementById('btnSubmit').addEventListener('click', async function() 
 updateCartBadge();
 initTglKirim();
 renderCart();
+
+// ========== INFO DUPLIKAT (dari pesanan-saya-detail.html) ==========
+(function showDupInfo() {
+  var raw = null;
+  try { raw = sessionStorage.getItem('kk22_dup_info'); } catch (e) {}
+  if (!raw) return;
+  var info = null;
+  try { info = JSON.parse(raw); } catch (e) {}
+  try { sessionStorage.removeItem('kk22_dup_info'); } catch (e) {}
+  if (!info || !info.ditambah) return;
+
+  var wrap = document.getElementById('dupInfoWrap');
+  if (!wrap) return;
+
+  var html = '<div class="dup-info-box">';
+  html += '<button class="dup-close" type="button" aria-label="Tutup">&times;</button>';
+  html += '<div class="dup-title">\u2705 ' + info.ditambah + ' item berhasil diduplikat ke keranjang</div>';
+  if (info.dilewati && info.dilewati.length > 0) {
+    html += '<div style="margin-top:6px;">\u26A0 ' + info.dilewati.length + ' item dilewati (nonaktif/tidak ada di katalog):</div>';
+    html += '<ul>';
+    for (var i = 0; i < info.dilewati.length && i < 5; i++) {
+      html += '<li>' + String(info.dilewati[i]).replace(/[&<>"']/g, function(c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      }) + '</li>';
+    }
+    if (info.dilewati.length > 5) html += '<li>... dan ' + (info.dilewati.length - 5) + ' lainnya</li>';
+    html += '</ul>';
+  }
+  html += '<div style="margin-top:8px;font-size:12px;">Edit tanggal kirim &amp; catatan, lalu klik Kirim Pesanan.</div>';
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  var closeBtn = wrap.querySelector('.dup-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() { wrap.innerHTML = ''; });
+  }
+})();
 </script>
 </body>
 </html>
