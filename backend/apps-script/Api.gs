@@ -39,6 +39,7 @@ function doPost(e) {
       case 'buatPesanan':        return handleBuatPesanan_(body);
       case 'getPesanan':         return handleGetPesanan_(body);
       case 'getDetailPesanan':   return handleGetDetailPesanan_(body);
+      case 'updatePesananItems': return handleUpdatePesananItems_(body);
       case 'lockItemPesanan':    return handleLockItemPesanan_(body);
       case 'unlockItemPesanan':  return handleUnlockItemPesanan_(body);
       case 'toggleProdukAktif':  return handleToggleProdukAktif_(body);

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Pesanan - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="katalog.html">Katalog</a>
+      <a href="pesan.html" class="cart-btn">Keranjang <span class="cart-badge" id="cartCount">0</span></a>
+      <a href="pesanan-saya.html" class="active">Pesanan Saya</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <a href="pesanan-saya.html" class="link" style="margin:0;">&larr; Pesanan Saya</a>
+    <span style="color:#ccc;">&middot;</span>
+    <span style="font-size:12px;color:#888;" id="poId"></span>
+  </div>
+
+  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Edit Pesanan</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:16px;">Ubah qty, hapus, atau tambah produk. Item yang sudah di-lock admin tidak bisa diedit.</p>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="editWrap">
+    <div class="empty-state"><span class="spinner"></span> Memuat pesanan...</div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<!-- MODAL: Tambah Produk -->
+<div id="modalAdd" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Tambah Produk</h2>
+      <button class="modal-close" id="modalClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="search-bar" style="margin-bottom:10px;">
+        <input type="text" id="modalSearch" placeholder="Cari produk..." autocomplete="off">
+      </div>
+      <div id="modalProdukList" style="max-height:50vh;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modalCancel" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/cart.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+document.getElementById('cartCount').textContent = KK22_CART.count();
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 3500);
+}
+function showModalAlert(msg) {
+  var b = document.getElementById('modalAlert');
+  if (!b) return;
+  b.className = 'alert alert-error show';
+  b.textContent = msg;
+}
+
+var idPesanan = '';
+var headerData = null;
+var lockedItems = [];   // readonly
+var editItems = [];     // pending items editable
+var allProduk = [];     // cache produk aktif
+
+function getQueryParam(name) {
+  var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+}
+
+function calcTotals() {
+  var totalQty = 0, totalHarga = 0, totalItem = 0;
+  lockedItems.forEach(function(it) {
+    var qty = Number(it.qty) || 0;
+    var harga = Number(it.harga_saat_pesan) || 0;
+    totalQty += qty;
+    totalHarga += qty * harga;
+    totalItem++;
+  });
+  editItems.forEach(function(it) {
+    var qty = Number(it.qty) || 0;
+    var harga = Number(it.harga_jual) || 0;
+    totalQty += qty;
+    totalHarga += qty * harga;
+    totalItem++;
+  });
+  return { total_item: totalItem, total_qty: totalQty, total_harga: totalHarga };
+}
+
+function renderEdit() {
+  var wrap = document.getElementById('editWrap');
+  var html = '';
+
+  // Header info
+  html += '<div class="po-detail-header" style="padding:14px 16px;">';
+  html += '<div class="po-detail-title">' + esc(headerData.order_number) + '</div>';
+  html += '<div class="po-detail-sub">' + esc(headerData.customer_ref_no) + ' &middot; ' + esc(headerData.nama_reseller) + '</div>';
+  html += '</div>';
+
+  // Locked items (readonly)
+  if (lockedItems.length > 0) {
+    html += '<div style="margin-bottom:14px;">';
+    html += '<div style="font-size:13px;font-weight:700;color:#333;margin-bottom:8px;">\uD83D\uDD12 Item dikunci admin (readonly)</div>';
+    html += '<div class="po-items">';
+    lockedItems.forEach(function(it) {
+      html += '<div class="po-item-row locked">';
+      html += '<div class="po-item-info">';
+      html += '<div class="po-item-name">' + esc(it.nama_produk) + '</div>';
+      html += '<div class="po-item-meta">' + it.qty + ' ' + esc(it.satuan||'') + ' &times; ' + rp(it.harga_saat_pesan) + ' = <b>' + rp(Number(it.qty) * Number(it.harga_saat_pesan)) + '</b></div>';
+      html += '</div>';
+      html += '<div class="po-item-status"><span class="badge-status locked">locked</span></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+  }
+
+  // Editable items
+  html += '<div style="margin-bottom:8px;font-size:13px;font-weight:700;color:#333;">\u270F Item bisa diedit</div>';
+
+  if (editItems.length === 0) {
+    html += '<div class="empty-state" style="padding:20px;"><div class="icon">\uD83D\uDDD1</div>Belum ada item pending.<br><span style="font-size:12px;">Klik "+ Tambah Produk" untuk menambah.</span></div>';
+  } else {
+    html += '<div class="po-items">';
+    editItems.forEach(function(it, idx) {
+      var subtotal = (Number(it.qty) || 0) * (Number(it.harga_jual) || 0);
+      html += '<div class="po-item-row" data-idx="' + idx + '">';
+      html += '<div class="po-item-info">';
+      html += '<div class="po-item-name">' + esc(it.nama_produk) + '</div>';
+      html += '<div class="po-item-meta">' + rp(it.harga_jual) + ' / ' + esc(it.satuan||'') + ' = <b>' + rp(subtotal) + '</b></div>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:4px;align-items:center;">';
+      html += '<button class="qty-btn qty-minus" data-idx="' + idx + '">\u2212</button>';
+      html += '<input type="number" class="qty-input-edit" data-idx="' + idx + '" value="' + it.qty + '" min="1" style="width:56px;padding:6px;text-align:center;border:1px solid #ddd;border-radius:6px;font-size:14px;">';
+      html += '<button class="qty-btn qty-plus" data-idx="' + idx + '">+</button>';
+      html += '<button class="btn-del-edit" data-idx="' + idx + '" title="Hapus">\uD83D\uDDD1</button>';
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Add button
+  html += '<button id="btnAddProduk" class="btn-primary-full" style="margin:12px 0;background:#28a745;">+ Tambah Produk</button>';
+
+  // Summary
+  var t = calcTotals();
+  html += '<div class="cart-total" style="margin-bottom:12px;">';
+  html += '<span>Total (' + t.total_item + ' item &middot; ' + t.total_qty + ' qty)</span>';
+  html += '<span class="amount">' + rp(t.total_harga) + '</span>';
+  html += '</div>';
+
+  // Actions
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button id="btnCancel" class="btn-secondary" style="flex:1;margin:0;">Batal</button>';
+  html += '<button id="btnSave" class="btn-primary-full" style="flex:2;margin:0;">\uD83D\uDCBE Simpan Perubahan</button>';
+  html += '</div>';
+
+  wrap.innerHTML = html;
+  attachHandlers();
+}
+
+function attachHandlers() {
+  // Qty minus
+  document.querySelectorAll('.qty-minus').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = Number(btn.dataset.idx);
+      var it = editItems[idx];
+      if (it.qty > 1) {
+        it.qty = it.qty - 1;
+        renderEdit();
+      }
+    });
+  });
+  // Qty plus
+  document.querySelectorAll('.qty-plus').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = Number(btn.dataset.idx);
+      editItems[idx].qty = (Number(editItems[idx].qty) || 1) + 1;
+      renderEdit();
+    });
+  });
+  // Qty input manual
+  document.querySelectorAll('.qty-input-edit').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var idx = Number(inp.dataset.idx);
+      var v = Number(inp.value) || 1;
+      if (v < 1) v = 1;
+      editItems[idx].qty = v;
+      renderEdit();
+    });
+  });
+  // Delete item
+  document.querySelectorAll('.btn-del-edit').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = Number(btn.dataset.idx);
+      var it = editItems[idx];
+      if (!confirm('Hapus "' + it.nama_produk + '" dari pesanan?')) return;
+      editItems.splice(idx, 1);
+      renderEdit();
+    });
+  });
+  // Add produk
+  document.getElementById('btnAddProduk').addEventListener('click', openAddModal);
+  // Cancel
+  document.getElementById('btnCancel').addEventListener('click', function() {
+    if (!confirm('Batal edit? Perubahan akan hilang.')) return;
+    window.location.href = 'pesanan-saya-detail.html?id=' + encodeURIComponent(idPesanan);
+  });
+  // Save
+  document.getElementById('btnSave').addEventListener('click', doSave);
+}
+
+// ========== MODAL TAMBAH PRODUK ==========
+function renderModalProduk(q) {
+  var ql = String(q || '').toLowerCase();
+  var filtered = allProduk.filter(function(p) {
+    if (!p.aktif) return false;
+    if (ql && String(p.nama_produk || '').toLowerCase().indexOf(ql) === -1) return false;
+    return true;
+  });
+  // Exclude yang sudah ada di editItems (tapi boleh tambah kalau memang mau naikkan qty dari modal? — biar simple, exclude)
+  var existingNames = {};
+  editItems.forEach(function(it) { existingNames[String(it.nama_produk).toLowerCase()] = true; });
+  filtered = filtered.filter(function(p) {
+    return !existingNames[String(p.nama_produk).toLowerCase()];
+  });
+
+  var list = document.getElementById('modalProdukList');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px;">Tidak ada produk cocok.</div>';
+    return;
+  }
+  var html = '<div class="modal-produk-list">';
+  filtered.slice(0, 50).forEach(function(p) {
+    html += '<div class="modal-produk-row" data-nama="' + esc(p.nama_produk) + '">';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="font-weight:600;font-size:13px;color:#333;">' + esc(p.nama_produk) + '</div>';
+    html += '<div style="font-size:11px;color:#888;">' + esc(p.satuan||'') + ' &middot; ' + rp(p.harga_jual) + '</div>';
+    html += '</div>';
+    html += '<button class="btn-add-modal" style="padding:6px 12px;font-size:12px;width:auto;margin:0;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;">+ Tambah</button>';
+    html += '</div>';
+  });
+  html += '</div>';
+  list.innerHTML = html;
+
+  list.querySelectorAll('.btn-add-modal').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var row = btn.closest('.modal-produk-row');
+      var nama = row.dataset.nama;
+      var prod = allProduk.find(function(x) { return x.nama_produk === nama; });
+      if (!prod) return;
+      editItems.push({
+        nama_produk: prod.nama_produk,
+        satuan: prod.satuan,
+        harga_jual: prod.harga_jual,
+        qty: 1
+      });
+      closeAddModal();
+      renderEdit();
+      showAlert('+1 ' + nama + ' ditambahkan', 'success');
+    });
+  });
+}
+
+function openAddModal() {
+  document.getElementById('modalSearch').value = '';
+  renderModalProduk('');
+  document.getElementById('modalAdd').style.display = 'flex';
+  setTimeout(function() { document.getElementById('modalSearch').focus(); }, 100);
+}
+function closeAddModal() {
+  document.getElementById('modalAdd').style.display = 'none';
+}
+
+document.getElementById('modalClose').addEventListener('click', closeAddModal);
+document.getElementById('modalCancel').addEventListener('click', closeAddModal);
+document.getElementById('modalSearch').addEventListener('input', function() {
+  renderModalProduk(this.value);
+});
+
+// ========== SAVE ==========
+async function doSave() {
+  var t = calcTotals();
+  if (t.total_item === 0) {
+    if (!confirm('Semua item pending akan dihapus. Pesanan akan DIBATALKAN (status: cancelled).\n\nLanjutkan?')) return;
+  }
+  if (t.total_item > 0 && editItems.length === 0 && lockedItems.length === 0) {
+    showAlert('Minimal 1 item pending harus ada.', 'error');
+    return;
+  }
+
+  var btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Menyimpan...';
+
+  var payload = editItems.map(function(it) {
+    return { nama_produk: it.nama_produk, qty: Number(it.qty) || 1 };
+  });
+
+  var r = await KK22_API.call('updatePesananItems', {
+    token: KK22_API.getToken(),
+    id_pesanan: idPesanan,
+    items: payload
+  });
+
+  btn.disabled = false;
+  btn.textContent = orig;
+
+  if (!r.ok) {
+    showAlert(r.error || 'Gagal menyimpan perubahan.', 'error');
+    return;
+  }
+
+  var d = r.data;
+  if (d.cancelled) {
+    showAlert('Pesanan dibatalkan (semua item dihapus).', 'info');
+    setTimeout(function() {
+      window.location.href = 'pesanan-saya.html';
+    }, 1200);
+    return;
+  }
+
+  showAlert('Berhasil disimpan. Status: ' + d.header_status, 'success');
+  setTimeout(function() {
+    window.location.href = 'pesanan-saya-detail.html?id=' + encodeURIComponent(idPesanan);
+  }, 900);
+}
+
+// ========== LOAD ==========
+async function loadData() {
+  if (!idPesanan) {
+    document.getElementById('editWrap').innerHTML = '<div class="empty-state">ID pesanan tidak ditemukan di URL.</div>';
+    return;
+  }
+  document.getElementById('editWrap').innerHTML =
+    '<div class="empty-state"><span class="spinner"></span> Memuat pesanan...</div>';
+
+  var r = await KK22_API.getDetailPesanan(idPesanan);
+  if (!r.ok) {
+    document.getElementById('editWrap').innerHTML =
+      '<div class="empty-state">Gagal memuat: ' + esc(r.error) + '</div>';
+    return;
+  }
+  headerData = r.data.header;
+  var st = String(headerData.status || '').toLowerCase();
+  if (st !== 'submitted' && st !== 'partial_locked') {
+    document.getElementById('editWrap').innerHTML =
+      '<div class="empty-state"><div class="icon">\uD83D\uDD12</div>PO tidak bisa diedit (status: <b>' + esc(st) + '</b>).<br>Hubungi admin jika perlu perubahan.</div>';
+    return;
+  }
+
+  lockedItems = [];
+  editItems = [];
+  (r.data.items || []).forEach(function(it) {
+    if (String(it.status_item).toLowerCase() === 'locked') {
+      lockedItems.push(it);
+    } else if (String(it.status_item).toLowerCase() === 'pending') {
+      editItems.push({
+        nama_produk: it.nama_produk,
+        satuan: it.satuan,
+        harga_jual: it.harga_saat_pesan,
+        qty: Number(it.qty) || 1
+      });
+    }
+  });
+
+  // Fetch produk untuk modal
+  var rp = await KK22_API.getProduk('', false);
+  if (rp.ok) allProduk = rp.data.items || [];
+
+  renderEdit();
+}
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  idPesanan = getQueryParam('id');
+  document.getElementById('poId').textContent = idPesanan || '(id tidak ada)';
+
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role === 'admin' || r.data.role === 'owner') {
+    window.location.href = 'admin-pesanan-detail.html?id=' + encodeURIComponent(idPesanan);
+    return;
+  }
+  loadData();
+})();
+</script>
+</body>
+</html>

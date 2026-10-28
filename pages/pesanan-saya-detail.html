@@ -86,7 +86,7 @@ function renderTimeline(status) {
     { key: 'shipped',   label: 'Dikirim',    icon: '\uD83D\uDE9A' },
     { key: 'done',      label: 'Selesai',    icon: '\uD83C\uDF89' }
   ];
-  // Mapping status current → index step aktif
+  // Mapping status current â†’ index step aktif
   var activeIdx = 0;
   if (st === 'submitted') activeIdx = 0;
   else if (st === 'partial_locked' || st === 'locked') activeIdx = 1;
@@ -143,10 +143,19 @@ function renderDetail() {
   // --- Timeline ---
   html += '<div class="timeline-wrap">' + renderTimeline(st) + '</div>';
 
-  // --- Action bar (duplikat) ---
-  html += '<div class="po-action-bar">';
-  html += '<div style="font-size:13px;color:#666;">Duplikat ke keranjang untuk pesan ulang</div>';
-  html += '<button id="btnDuplikat" class="btn-primary-full" style="width:auto;margin:0;padding:10px 18px;font-size:14px;">\uD83D\uDD04 Duplikat Pesanan</button>';
+  // --- Action bar (duplikat + edit) ---
+  var canEdit = (st === 'submitted' || st === 'partial_locked');
+  html += '<div class="po-action-bar" style="flex-direction:column;align-items:stretch;gap:8px;">';
+  html += '<div style="font-size:12px;color:#666;text-align:center;">Duplikat untuk pesan ulang &middot; Edit selama belum di-lock admin</div>';
+  html += '<div style="display:flex;gap:8px;">';
+  if (canEdit) {
+    html += '<button id="btnEdit" class="btn-primary-full" style="flex:1;margin:0;padding:10px 14px;font-size:14px;background:#28a745;">\u270F Edit Pesanan</button>';
+  }
+  html += '<button id="btnDuplikat" class="btn-primary-full" style="flex:1;margin:0;padding:10px 14px;font-size:14px;">\uD83D\uDD04 Duplikat</button>';
+  html += '</div>';
+  if (!canEdit) {
+    html += '<div style="font-size:11px;color:#999;text-align:center;">PO sudah diproses admin. Untuk ubah, WA admin.</div>';
+  }
   html += '</div>';
 
   // --- Items ---
@@ -182,6 +191,13 @@ function renderDetail() {
   var btnDup = document.getElementById('btnDuplikat');
   if (btnDup) {
     btnDup.addEventListener('click', doDuplikat);
+  }
+  // Handler edit
+  var btnEdit = document.getElementById('btnEdit');
+  if (btnEdit) {
+    btnEdit.addEventListener('click', function() {
+      window.location.href = 'pesanan-saya-edit.html?id=' + encodeURIComponent(idPesanan);
+    });
   }
 }
 

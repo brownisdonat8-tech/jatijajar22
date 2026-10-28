@@ -440,6 +440,227 @@ function handleGetDetailPesanan_(body) {
 }
 
 // ============================================================
+// UPDATE PESANAN ITEMS (F7.5 — edit PO selama masih pending/partial_locked)
+// Reseller bisa edit PO sendiri; admin/owner bisa edit semua.
+// Locked items: readonly (tidak boleh diubah).
+// items[] = FINAL list item PENDING saja (locked tidak dikirim, tetap ada).
+// ============================================================
+
+function handleUpdatePesananItems_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+
+  const idPesanan = String(body.id_pesanan || '').trim();
+  if (!idPesanan) return jsonResponse_({ ok: false, error: 'id_pesanan wajib diisi.' });
+
+  const incomingItems = Array.isArray(body.items) ? body.items : [];
+
+  // --- Verify header ---
+  const shP = getSheet_(CONFIG.SHEETS.PESANAN);
+  const lastP = shP.getLastRow();
+  if (lastP < 2) return jsonResponse_({ ok: false, error: 'Tidak ada pesanan.' });
+  const dataP = shP.getRange(2, 1, lastP - 1, 20).getValues();
+
+  let headerRowIdx = -1;
+  let orderNumber = '';
+  let headerResellerId = '';
+  let headerStatus = '';
+  for (let i = 0; i < dataP.length; i++) {
+    if (String(dataP[i][0]) === idPesanan) {
+      headerRowIdx = i + 2;
+      orderNumber = String(dataP[i][1] || '');
+      headerResellerId = String(dataP[i][4] || '');
+      headerStatus = String(dataP[i][10] || '').toLowerCase();
+      break;
+    }
+  }
+  if (headerRowIdx === -1) return jsonResponse_({ ok: false, error: 'Pesanan tidak ditemukan.' });
+
+  // --- Auth: reseller hanya PO sendiri ---
+  if (user.role === 'reseller') {
+    if (String(headerResellerId) !== String(user.id_reseller)) {
+      return jsonResponse_({ ok: false, error: 'Anda tidak berhak mengedit pesanan ini.' });
+    }
+  } else if (user.role !== 'admin' && user.role !== 'owner') {
+    return jsonResponse_({ ok: false, error: 'Role tidak diizinkan.' });
+  }
+
+  // --- Status guard ---
+  if (headerStatus !== 'submitted' && headerStatus !== 'partial_locked') {
+    return jsonResponse_({ ok: false, error: 'PO tidak bisa diedit (status: ' + headerStatus + '). Hubungi admin.' });
+  }
+
+  // --- Validate incoming items ---
+  let validItems = [];
+  if (incomingItems.length > 0) {
+    const v = validasiItemsForUpdate_(incomingItems);
+    if (!v.ok) return jsonResponse_({ ok: false, error: v.error });
+    validItems = v.items;
+  }
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    // --- Read existing DETAIL rows for this PO ---
+    const shD = getSheet_(CONFIG.SHEETS.DETAIL_PESANAN);
+    const lastD = shD.getLastRow();
+    let lockedItems = [];
+    let pendingRowIndices = [];
+    if (lastD >= 2) {
+      const dataD = shD.getRange(2, 1, lastD - 1, 14).getValues();
+      for (let i = 0; i < dataD.length; i++) {
+        if (String(dataD[i][1]) !== idPesanan) continue;
+        const st = String(dataD[i][11] || 'pending').toLowerCase();
+        if (st === 'pending') {
+          pendingRowIndices.push(i + 2);
+        } else {
+          lockedItems.push({
+            qty: Number(dataD[i][5]) || 0,
+            subtotal: Number(dataD[i][9]) || 0,
+            status_item: st
+          });
+        }
+      }
+    }
+
+    const lockedCount = lockedItems.length;
+
+    // --- HARD DELETE existing pending rows (dari bawah ke atas) ---
+    pendingRowIndices.sort(function(a, b) { return b - a; });
+    pendingRowIndices.forEach(function(rowIdx) { shD.deleteRow(rowIdx); });
+
+    // --- Insert new pending rows ---
+    let maxDetailNum = 0;
+    const lastDNow = shD.getLastRow();
+    if (lastDNow >= 2) {
+      const dataDNow = shD.getRange(2, 1, lastDNow - 1, 1).getValues();
+      dataDNow.forEach(function(row) {
+        const m = String(row[0] || '').match(/KK22-DTL-(\d+)/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxDetailNum) maxDetailNum = n;
+        }
+      });
+    }
+
+    const newRows = [];
+    validItems.forEach(function(it) {
+      maxDetailNum++;
+      const idDetail = 'KK22-DTL-' + pad4_(maxDetailNum);
+      const qty = Number(it.qty) || 0;
+      const harga = Number(it.harga_jual) || 0;
+      const subtotal = qty * harga;
+      newRows.push([
+        idDetail, idPesanan, orderNumber,
+        it.nama_produk, it.kode_sku || '', qty, it.satuan || '',
+        harga, '', subtotal, '', 'pending', '', ''
+      ]);
+    });
+
+    if (newRows.length > 0) {
+      const startRow = shD.getLastRow() + 1;
+      shD.getRange(startRow, 1, newRows.length, 14).setValues(newRows);
+    }
+
+    // --- Recalc totals ---
+    let totalQty = 0, totalHarga = 0;
+    lockedItems.forEach(function(it) {
+      totalQty += it.qty;
+      totalHarga += it.subtotal;
+    });
+    newRows.forEach(function(r) {
+      totalQty += Number(r[5]) || 0;
+      totalHarga += Number(r[9]) || 0;
+    });
+    const totalItemCount = lockedCount + newRows.length;
+
+    // --- Determine new header status ---
+    let newStatus = headerStatus;
+    if (totalItemCount === 0) newStatus = 'cancelled';
+    else if (lockedCount > 0 && newRows.length > 0) newStatus = 'partial_locked';
+    else if (lockedCount > 0 && newRows.length === 0) newStatus = 'locked';
+    else newStatus = 'submitted';
+
+    const now = nowJakarta_();
+    shP.getRange(headerRowIdx, 11).setValue(newStatus);
+    shP.getRange(headerRowIdx, 12).setValue(totalItemCount);
+    shP.getRange(headerRowIdx, 13).setValue(totalQty);
+    shP.getRange(headerRowIdx, 14).setValue(totalHarga);
+    shP.getRange(headerRowIdx, 19).setValue(user.id_user);
+    shP.getRange(headerRowIdx, 20).setValue(now);
+
+    try {
+      logAktivitas_(user, 'updatePesananItems',
+        'PO ' + idPesanan + ': ' + newRows.length + ' pending baru, ' +
+        lockedCount + ' locked readonly, status=' + newStatus);
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: {
+        id_pesanan: idPesanan,
+        updated_items: newRows.length,
+        locked_items: lockedCount,
+        total_item: totalItemCount,
+        total_qty: totalQty,
+        total_harga: totalHarga,
+        header_status: newStatus,
+        cancelled: newStatus === 'cancelled'
+      }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function validasiItemsForUpdate_(rawItems) {
+  const sh = getSheet_(CONFIG.SHEETS.PRODUK);
+  const last = sh.getLastRow();
+  if (last < 2) return { ok: false, error: 'Master produk kosong.' };
+
+  const data = sh.getRange(2, 1, last - 1, 20).getValues();
+  const produkMap = {};
+  data.forEach(function(r) {
+    const nama = String(r[0] || '').trim();
+    if (!nama) return;
+    produkMap[nama.toLowerCase()] = {
+      nama_produk: nama,
+      kode_sku: String(r[2] || ''),
+      satuan: String(r[5] || ''),
+      harga_jual: Number(r[9]) || 0,
+      aktif: String(r[17] || '').toUpperCase() === 'TRUE'
+    };
+  });
+
+  const items = [];
+  const seen = {};
+  for (let i = 0; i < rawItems.length; i++) {
+    const it = rawItems[i];
+    const nama = String(it.nama_produk || '').trim();
+    const qty = Number(it.qty) || 0;
+    if (!nama) return { ok: false, error: 'Item ke-' + (i + 1) + ': nama_produk kosong.' };
+    const key = nama.toLowerCase();
+    if (seen[key]) return { ok: false, error: 'Produk duplikat: ' + nama };
+    seen[key] = true;
+
+    const produk = produkMap[key];
+    if (!produk) return { ok: false, error: 'Produk tidak ditemukan: ' + nama };
+    if (!produk.aktif) return { ok: false, error: 'Produk nonaktif: ' + nama };
+    if (qty <= 0) return { ok: false, error: 'Qty harus > 0: ' + nama };
+
+    items.push({
+      nama_produk: nama,
+      kode_sku: produk.kode_sku,
+      satuan: produk.satuan,
+      harga_jual: produk.harga_jual,
+      qty: qty
+    });
+  }
+  return { ok: true, items: items };
+}
+
+// ============================================================
 // HELPERS
 // ============================================================
 
