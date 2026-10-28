@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detail PO - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="admin-pesanan.html">Admin Pesanan</a>
+      <a href="admin-users.html">Admin Users</a>
+      <a href="admin-produk.html" class="disabled">Admin Produk</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <a href="admin-pesanan.html" class="link" style="margin:0;">&larr; Kembali</a>
+    <span style="color:#ccc;">&middot;</span>
+    <span style="font-size:12px;color:#888;" id="poId"></span>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="detailWrap">
+    <div class="empty-state"><span class="spinner"></span> Memuat detail PO...</div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<!-- MODAL UNLOCK -->
+<div id="modalUnlock" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Unlock Item</h2>
+      <button class="modal-close" id="unlockClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;margin-bottom:12px;">
+        Item: <b id="unlockItemName"></b>
+      </p>
+      <div class="form-row">
+        <label for="unlockAlasan">Alasan Unlock <span style="color:#dc3545">*</span></label>
+        <textarea id="unlockAlasan" placeholder="cth: ganti jumlah, koreksi input, stok habis..." maxlength="200"></textarea>
+        <div class="hint">Wajib diisi untuk audit trail.</div>
+      </div>
+      <div id="modalAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="unlockCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="unlockSubmit" type="button" style="flex:1;margin:0;">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function fmtTgl(s) {
+  if (!s) return '-';
+  try {
+    var d = new Date(s + 'T00:00:00');
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch (e) { return s; }
+}
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 3500);
+}
+function showModalAlert(msg) {
+  var b = document.getElementById('modalAlert');
+  b.className = 'alert alert-error show';
+  b.textContent = msg;
+}
+
+var idPesanan = '';
+var currentData = null;
+var pendingUnlockDetail = null;
+
+function getQueryParam(name) {
+  var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+}
+
+function renderDetail() {
+  if (!currentData) return;
+  var h = currentData.header;
+  var items = currentData.items || [];
+  var st = String(h.status || 'submitted').toLowerCase();
+
+  var wrap = document.getElementById('detailWrap');
+  var html = '';
+
+  // --- Header PO ---
+  html += '<div class="po-detail-header">';
+  html += '<div class="po-detail-title">' + esc(h.order_number) + '</div>';
+  html += '<div class="po-detail-sub">' + esc(h.customer_ref_no) + '</div>';
+  html += '<div class="po-detail-grid">';
+  html += '<div><span class="lbl">Reseller</span><span class="val">' + esc(h.nama_reseller) + '</span></div>';
+  html += '<div><span class="lbl">ID Reseller</span><span class="val">' + esc(h.id_reseller) + '</span></div>';
+  html += '<div><span class="lbl">Tgl Pesan</span><span class="val">' + fmtTgl(h.tgl_pesan) + '</span></div>';
+  html += '<div><span class="lbl">Tgl Kirim</span><span class="val">' + fmtTgl(h.tgl_kirim) + '</span></div>';
+  html += '<div><span class="lbl">Status</span><span class="val"><span class="badge-status ' + st + '">' + esc(st) + '</span></span></div>';
+  html += '<div><span class="lbl">Total</span><span class="val">' + (h.total_item||0) + ' item &middot; ' + (h.total_qty||0) + ' qty &middot; <b>' + rp(h.total_harga) + '</b></span></div>';
+  html += '</div>';
+  if (h.catatan) html += '<div class="po-detail-note"><b>Catatan:</b> ' + esc(h.catatan) + '</div>';
+  html += '</div>';
+
+  // --- Action bar ---
+  var pendingItems = items.filter(function(it) { return String(it.status_item).toLowerCase() === 'pending'; });
+  html += '<div class="po-action-bar">';
+  html += '<div id="selectionInfo" style="font-size:13px;color:#666;">0 item dipilih</div>';
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button id="btnLock" class="btn-primary-full" disabled style="width:auto;margin:0;padding:10px 16px;font-size:13px;">&#128274; Lock Terpilih</button>';
+  html += '<button id="btnRefreshDetail" class="btn-secondary" style="width:auto;margin:0;padding:10px 14px;font-size:13px;">Refresh</button>';
+  html += '</div>';
+  html += '</div>';
+
+  // --- Items ---
+  if (items.length === 0) {
+    html += '<div class="empty-state">PO ini tidak memiliki item.</div>';
+  } else {
+    html += '<div class="po-items">';
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var itStatus = String(it.status_item || 'pending').toLowerCase();
+      var isPending = itStatus === 'pending';
+      var isLocked = itStatus === 'locked';
+      var rowClass = 'po-item-row' + (isLocked ? ' locked' : (itStatus === 'shipped' || itStatus === 'done' ? ' done' : ''));
+
+      html += '<div class="' + rowClass + '" data-id="' + esc(it.id_detail) + '" data-status="' + esc(itStatus) + '">';
+      html += '<div class="po-item-check">';
+      if (isPending) {
+        html += '<input type="checkbox" class="item-chk" data-id="' + esc(it.id_detail) + '">';
+      } else {
+        html += '<span style="color:#ccc;">&#10003;</span>';
+      }
+      html += '</div>';
+      html += '<div class="po-item-info">';
+      html += '<div class="po-item-name">' + esc(it.nama_produk) + '</div>';
+      html += '<div class="po-item-meta">' + it.qty + ' ' + esc(it.satuan||'') + ' &times; ' + rp(it.harga_saat_pesan) + ' = <b>' + rp(it.subtotal) + '</b></div>';
+      html += '</div>';
+      html += '<div class="po-item-status">';
+      html += '<span class="badge-status ' + (itStatus === 'pending' ? 'submitted' : itStatus === 'locked' ? 'locked' : itStatus) + '">' + esc(itStatus) + '</span>';
+      if (isLocked) {
+        html += '<button class="btn-unlock" data-id="' + esc(it.id_detail) + '" data-nama="' + esc(it.nama_produk) + '" style="margin-left:6px;padding:4px 10px;font-size:11px;background:#d1ecf1;color:#0c5460;border:none;border-radius:6px;cursor:pointer;">&#128275; Unlock</button>';
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  wrap.innerHTML = html;
+  attachDetailHandlers();
+}
+
+function attachDetailHandlers() {
+  var checkboxes = document.querySelectorAll('.item-chk');
+  var btnLock = document.getElementById('btnLock');
+  var selectionInfo = document.getElementById('selectionInfo');
+
+  function updateSelection() {
+    var checked = document.querySelectorAll('.item-chk:checked');
+    var n = checked.length;
+    selectionInfo.textContent = n + ' item dipilih';
+    btnLock.disabled = n === 0;
+    btnLock.textContent = n > 0 ? ('\uD83D\uDD12 Lock ' + n + ' Item') : '\uD83D\uDD12 Lock Terpilih';
+  }
+
+  checkboxes.forEach(function(chk) {
+    chk.addEventListener('change', updateSelection);
+  });
+
+  btnLock.addEventListener('click', async function() {
+    var checked = document.querySelectorAll('.item-chk:checked');
+    var ids = Array.prototype.map.call(checked, function(c) { return c.dataset.id; });
+    if (ids.length === 0) return;
+
+    if (!confirm('Lock ' + ids.length + ' item terpilih?\n\nItem yang sudah locked tidak bisa diedit reseller.')) return;
+
+    btnLock.disabled = true;
+    btnLock.textContent = 'Melocking...';
+
+    var r = await KK22_API.lockItemPesanan(idPesanan, ids);
+    if (!r.ok) {
+      showAlert(r.error || 'Gagal lock item.', 'error');
+      updateSelection();
+      return;
+    }
+
+    var d = r.data || {};
+    var msg = 'Berhasil lock ' + (d.locked || []).length + ' item.';
+    if ((d.skipped || []).length > 0) msg += ' ' + d.skipped.length + ' dilewati.';
+    showAlert(msg, 'success');
+
+    await loadDetail();
+  });
+
+  var unlockBtns = document.querySelectorAll('.btn-unlock');
+  unlockBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      pendingUnlockDetail = {
+        id: btn.dataset.id,
+        nama: btn.dataset.nama
+      };
+      document.getElementById('unlockItemName').textContent = pendingUnlockDetail.nama;
+      document.getElementById('unlockAlasan').value = '';
+      document.getElementById('modalAlert').className = 'alert';
+      document.getElementById('modalUnlock').style.display = 'flex';
+    });
+  });
+
+  var btnRefreshDetail = document.getElementById('btnRefreshDetail');
+  if (btnRefreshDetail) {
+    btnRefreshDetail.addEventListener('click', async function() {
+      await loadDetail();
+      showAlert('Detail diperbarui', 'info');
+    });
+  }
+}
+
+async function loadDetail() {
+  if (!idPesanan) {
+    document.getElementById('detailWrap').innerHTML = '<div class="empty-state">ID pesanan tidak ditemukan di URL.</div>';
+    return;
+  }
+  document.getElementById('detailWrap').innerHTML =
+    '<div class="empty-state"><span class="spinner"></span> Memuat detail PO...</div>';
+  var r = await KK22_API.getDetailPesanan(idPesanan);
+  if (!r.ok) {
+    document.getElementById('detailWrap').innerHTML =
+      '<div class="empty-state">Gagal memuat: ' + esc(r.error) + '</div>';
+    return;
+  }
+  currentData = r.data;
+  renderDetail();
+}
+
+// --- Unlock modal handlers ---
+document.getElementById('unlockClose').addEventListener('click', closeUnlockModal);
+document.getElementById('unlockCancel').addEventListener('click', closeUnlockModal);
+function closeUnlockModal() {
+  document.getElementById('modalUnlock').style.display = 'none';
+  pendingUnlockDetail = null;
+}
+
+document.getElementById('unlockSubmit').addEventListener('click', async function() {
+  if (!pendingUnlockDetail) return;
+  var alasan = document.getElementById('unlockAlasan').value.trim();
+  if (!alasan) {
+    showModalAlert('Alasan wajib diisi untuk audit.');
+    return;
+  }
+  var btn = document.getElementById('unlockSubmit');
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Meng-unlock...';
+
+  var r = await KK22_API.unlockItemPesanan(idPesanan, pendingUnlockDetail.id, alasan);
+  btn.disabled = false;
+  btn.textContent = orig;
+
+  if (!r.ok) {
+    showModalAlert(r.error || 'Gagal unlock.');
+    return;
+  }
+  closeUnlockModal();
+  showAlert('Item berhasil di-unlock.', 'success');
+  await loadDetail();
+});
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  idPesanan = getQueryParam('id');
+  document.getElementById('poId').textContent = idPesanan || '(id tidak ada)';
+
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role !== 'owner' && r.data.role !== 'admin') {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  loadDetail();
+})();
+</script>
+</body>
+</html>
