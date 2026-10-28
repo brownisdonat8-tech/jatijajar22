@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Produk - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="admin-pesanan.html">Admin Pesanan</a>
+      <a href="admin-users.html">Admin Users</a>
+      <a href="admin-produk.html" class="active">Admin Produk</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Kelola Produk</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:16px;">Aktifkan/nonaktifkan produk. Produk nonaktif tidak tampil di katalog reseller.</p>
+
+  <div class="tabs" id="tabs">
+    <button class="active" data-filter="">Semua</button>
+    <button data-filter="aktif">Aktif</button>
+    <button data-filter="nonaktif">Nonaktif</button>
+  </div>
+
+  <div class="search-bar" style="margin-bottom:12px;">
+    <input type="text" id="q" placeholder="Cari produk..." autocomplete="off">
+    <button id="btnRefresh" class="btn-secondary">Refresh</button>
+  </div>
+
+  <div class="filter-row" style="margin-bottom:8px;">
+    <span class="count-info" id="countInfo">-</span>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="produkWrap">
+    <div class="empty-state"><span class="spinner"></span> Memuat produk...</div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 3000);
+}
+
+var semuaProduk = [];
+var activeFilter = '';
+
+function renderProduk() {
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var filtered = semuaProduk.filter(function(p) {
+    if (activeFilter === 'aktif' && !p.aktif) return false;
+    if (activeFilter === 'nonaktif' && p.aktif) return false;
+    if (q && String(p.nama_produk || '').toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+
+  var aktifCount = semuaProduk.filter(function(p) { return p.aktif; }).length;
+  var nonaktifCount = semuaProduk.length - aktifCount;
+  var info = filtered.length + ' dari ' + semuaProduk.length + ' produk';
+  info += ' · ' + aktifCount + ' aktif, ' + nonaktifCount + ' nonaktif';
+  document.getElementById('countInfo').textContent = info;
+
+  var wrap = document.getElementById('produkWrap');
+  if (filtered.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">&#128269;</div>Tidak ada produk cocok.</div>';
+    return;
+  }
+
+  var html = '<div class="produk-grid">';
+  for (var i = 0; i < filtered.length; i++) {
+    var p = filtered[i];
+    var imgHas = p.gambar_url && String(p.gambar_url).trim() !== '';
+    var imgStyle = imgHas ? 'style="background-image:url(' + String(p.gambar_url).replace(/["'\s()<>]/g, '') + ')"' : '';
+    var imgBlock = imgHas
+      ? '<div class="img" ' + imgStyle + '></div>'
+      : '<div class="img placeholder"><span class="ph-icon">\uD83C\uDF70</span></div>';
+    var badgeAktif = p.aktif
+      ? '<span class="badge" style="background:#d4edda;color:#155724;font-size:10px;">aktif</span>'
+      : '<span class="badge" style="background:#f8d7da;color:#721c24;font-size:10px;">nonaktif</span>';
+
+    html +=
+      '<div class="produk-card" data-nama="' + esc(p.nama_produk) + '">' +
+        imgBlock +
+        '<div class="nama">' + esc(p.nama_produk) + '</div>' +
+        '<div class="meta">' + esc(p.satuan || '-') + ' &middot; Stok: ' + (Number(p.stok_available) || 0) + '</div>' +
+        '<div class="harga-row">' +
+          '<span class="harga">' + rp(p.harga_jual) + '</span>' +
+          badgeAktif +
+        '</div>' +
+        '<button class="btn-add btn-toggle" data-id="' + esc(p.id_produk) + '" data-aktif="' + (p.aktif ? 'true' : 'false') + '" style="background:' + (p.aktif ? '#dc3545' : '#28a745') + ';margin-top:8px;">' +
+          (p.aktif ? '\u26A0 Nonaktifkan' : '\u2713 Aktifkan') +
+        '</button>' +
+      '</div>';
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.btn-toggle').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.id;
+      var aktifSkrg = btn.dataset.aktif === 'true';
+      var targetAktif = !aktifSkrg;
+      var label = targetAktif ? 'AKTIFKAN' : 'NONAKTIFKAN';
+      if (!confirm(label + ' produk ini?' + (targetAktif ? '' : '\n\nProduk nonaktif tidak akan tampil di katalog reseller, tapi PO existing tetap jalan.'))) return;
+
+      btn.disabled = true;
+      var orig = btn.textContent;
+      btn.textContent = 'Memproses...';
+
+      var r = await KK22_API.toggleProdukAktif(id, targetAktif);
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (!r.ok) {
+        showAlert(r.error || 'Gagal ubah status.', 'error');
+        return;
+      }
+
+      showAlert('Produk berhasil di-' + (targetAktif ? 'aktifkan' : 'nonaktifkan') + '.', 'success');
+      KK22_API.clearProdukCache();
+      await loadProduk();
+    });
+  });
+}
+
+async function loadProduk() {
+  document.getElementById('produkWrap').innerHTML =
+    '<div class="empty-state"><span class="spinner"></span> Memuat produk...</div>';
+  // forceRefresh: true karena admin perlu data terbaru (status aktif bisa berubah)
+  var r = await KK22_API.getProduk('', true);
+  if (!r.ok) {
+    document.getElementById('produkWrap').innerHTML =
+      '<div class="empty-state">Gagal memuat: ' + esc(r.error) + '</div>';
+    return;
+  }
+  semuaProduk = r.data.items || [];
+  renderProduk();
+}
+
+document.getElementById('q').addEventListener('input', renderProduk);
+document.querySelectorAll('#tabs button').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#tabs button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter || '';
+    renderProduk();
+  });
+});
+document.getElementById('btnRefresh').addEventListener('click', async function() {
+  await loadProduk();
+  showAlert('Produk diperbarui', 'info');
+});
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role !== 'owner' && r.data.role !== 'admin') {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  loadProduk();
+})();
+</script>
+</body>
+</html>
