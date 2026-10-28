@@ -152,8 +152,8 @@ async function loadUsers() {
 }
 
 function openModal() {
-  if (!currentUser || currentUser.role !== 'owner') {
-    showAlert('Hanya owner yang bisa menambah user.', 'error');
+  if (!currentUser || (currentUser.role !== 'owner' && currentUser.role !== 'admin')) {
+    showAlert('Hanya owner/admin yang bisa menambah user.', 'error');
     return;
   }
   document.getElementById('inpHp').value = '';
@@ -234,8 +234,14 @@ document.getElementById('btnLogout').addEventListener('click', async function() 
   }
   currentUser = r.data;
 
-  if (currentUser.role !== 'owner') {
+  if (currentUser.role !== 'owner' && currentUser.role !== 'admin') {
     document.getElementById('btnAddUser').style.display = 'none';
+  }
+
+  // Kalau admin (bukan owner), sembunyikan opsi 'owner' dari dropdown
+  if (currentUser.role === 'admin') {
+    var ownerOpt = document.querySelector('#inpRole option[value="owner"]');
+    if (ownerOpt) ownerOpt.remove();
   }
 
   loadUsers();

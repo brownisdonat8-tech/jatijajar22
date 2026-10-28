@@ -290,102 +290,8 @@ function validateSessionCached_(token) {
 function handleCreateUser_(body) {
   const user = validateToken_(body.token);
   if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
-  if (user.role !== 'owner') {
-    return jsonResponse_({ ok: false, error: 'Hanya owner yang bisa membuat user baru.' });
-  }
-
-  const noHpRaw = String(body.no_hp || '').trim();
-  const pin = String(body.pin || '').trim();
-  const namaLengkap = String(body.nama_lengkap || '').trim();
-  const role = String(body.role || '').trim().toLowerCase();
-  const idReseller = String(body.id_reseller || '').trim();
-
-  if (!noHpRaw) return jsonResponse_({ ok: false, error: 'no_hp wajib diisi.' });
-  const noHp = normalizePhone_(noHpRaw);
-  if (!noHp || noHp.length < 10) return jsonResponse_({ ok: false, error: 'no_hp tidak valid (hasil normalisasi: "' + noHp + '").' });
-
-  if (!namaLengkap) return jsonResponse_({ ok: false, error: 'nama_lengkap wajib diisi.' });
-  if (pin.length < CONFIG.PIN.MIN || pin.length > CONFIG.PIN.MAX) {
-    return jsonResponse_({ ok: false, error: 'PIN harus ' + CONFIG.PIN.MIN + '-' + CONFIG.PIN.MAX + ' digit.' });
-  }
-
-  const validRoles = ['owner', 'admin', 'reseller'];
-  if (validRoles.indexOf(role) === -1) {
-    return jsonResponse_({ ok: false, error: 'Role tidak valid. Pilih: ' + validRoles.join(', ') });
-  }
-
-  if (role === 'reseller' && !idReseller) {
-    return jsonResponse_({ ok: false, error: 'id_reseller wajib untuk role reseller.' });
-  }
-
-  const existing = findUserByPhone_(noHp);
-  if (existing) {
-    return jsonResponse_({ ok: false, error: 'Nomor HP sudah terdaftar: ' + existing.nama_lengkap + ' (' + existing.role + ')' });
-  }
-
-  try {
-    const newUser = createUser_({
-      noHp: noHp,
-      pin: pin,
-      role: role,
-      namaLengkap: namaLengkap,
-      idReseller: role === 'reseller' ? idReseller : ''
-    });
-    try { logAktivitas_(user, 'createUser', 'Buat user ' + newUser.id_user + ' role=' + role + ' no_hp=' + noHp); } catch (e) {}
-    return jsonResponse_({ ok: true, data: { user: newUser } });
-  } catch (e) {
-    return jsonResponse_({ ok: false, error: 'Gagal membuat user: ' + e.message });
-  }
-}
-
-function handleListUsers_(body) {
-  const user = validateToken_(body.token);
-  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
   if (user.role !== 'owner' && user.role !== 'admin') {
-    return jsonResponse_({ ok: false, error: 'Hanya owner/admin yang bisa lihat daftar user.' });
-  }
-
-  const sh = getSheet_(CONFIG.SHEETS.USERS);
-  const last = sh.getLastRow();
-  const items = [];
-  if (last >= 2) {
-    const data = sh.getRange(2, 1, last - 1, 10).getValues();
-    for (let i = 0; i < data.length; i++) {
-      const r = data[i];
-      const idUser = String(r[0] || '');
-      if (!idUser) continue;
-      items.push({
-        id_user: idUser,
-        no_hp: String(r[1] || ''),
-        role: String(r[4] || ''),
-        id_reseller: String(r[5] || ''),
-        nama_lengkap: String(r[6] || ''),
-        aktif: String(r[7] || '').toUpperCase() === 'TRUE',
-        tgl_dibuat: String(r[8] || '')
-      });
-    }
-  }
-
-  const roleOrder = { owner: 0, admin: 1, reseller: 2 };
-  items.sort(function(a, b) {
-    const ra = roleOrder[a.role] != null ? roleOrder[a.role] : 99;
-    const rb = roleOrder[b.role] != null ? roleOrder[b.role] : 99;
-    if (ra !== rb) return ra - rb;
-    return String(a.id_user).localeCompare(String(b.id_user));
-  });
-
-  return jsonResponse_({ ok: true, data: { total: items.length, items: items } });
-}
-
-// ============================================================
-// USER MANAGEMENT (endpoint: createUser, listUsers)
-// ============================================================
-
-function handleCreateUser_(body) {
-  const user = validateToken_(body.token);
-  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
-  if (user.role !== 'owner') {
-    return jsonResponse_({ ok: false, error: 'Hanya owner yang bisa membuat user baru.' });
+    return jsonResponse_({ ok: false, error: 'Hanya owner/admin yang bisa membuat user baru.' });
   }
 
   const noHpRaw = String(body.no_hp || '').trim();
@@ -406,6 +312,11 @@ function handleCreateUser_(body) {
   const validRoles = ['owner', 'admin', 'reseller'];
   if (validRoles.indexOf(role) === -1) {
     return jsonResponse_({ ok: false, error: 'Role tidak valid. Pilih: ' + validRoles.join(', ') });
+  }
+
+  // Guard: hanya owner yang bisa membuat user role owner
+  if (role === 'owner' && user.role !== 'owner') {
+    return jsonResponse_({ ok: false, error: 'Hanya owner yang bisa membuat user role owner.' });
   }
 
   if (role === 'reseller' && !idReseller) {
