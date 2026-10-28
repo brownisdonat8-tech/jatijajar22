@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debug - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  .dbg { background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:10px; font-family:monospace; font-size:12px; margin-bottom:14px; overflow-x:auto; white-space:pre-wrap; word-break:break-all; line-height:1.6; }
+  .dbg .k { color:#9cdcfe; }
+  .dbg .v { color:#ce9178; }
+  .dbg .ok { color:#4ec9b0; }
+  .dbg .err { color:#f48771; }
+  .dbg .warn { color:#dcdcaa; }
+  .dbg-head { background:#252526; color:white; padding:8px 12px; border-radius:8px 8px 0 0; margin:14px 0 0; font-size:12px; font-weight:600; }
+</style>
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span> · DEBUG</div>
+    <div class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="debug.html" class="active">Debug</a>
+    </div>
+  </nav>
+
+  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Diagnostik Session</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:16px;">Halaman ini menampilkan info session aktif. Cocok untuk test role tanpa DevTools. Refresh (Ctrl+Shift+R) untuk update.</p>
+
+  <button id="btnRefresh" class="btn-primary-full" style="margin-bottom:16px;">🔄 Refresh Info</button>
+  <a href="login.html" class="link" style="margin-bottom:16px;">Logout & Login Akun Lain</a>
+
+  <div class="dbg-head">1. TOKEN & USER di localStorage</div>
+  <div class="dbg" id="dbgLocal">Memuat...</div>
+
+  <div class="dbg-head">2. HASIL whoami (fresh call ke server)</div>
+  <div class="dbg" id="dbgWhoami">Memuat...</div>
+
+  <div class="dbg-head">3. KESIMPULAN</div>
+  <div class="dbg" id="dbgKesimpulan">Memuat...</div>
+
+  <div class="dbg-head">4. Aksi Cepat</div>
+  <div class="dbg" id="dbgAksi">
+<span class="k">Instruksi:</span>
+- Kalau role di atas <span class="err">TIDAK SESUAI</span> dengan yang Anda login → klik tombol "Force Logout" di bawah, lalu login ulang
+- Kalau sudah sesuai tapi halaman lain masih bug → laporkan role yang tertera
+  </div>
+  <button id="btnForceLogout" class="btn-secondary" style="margin-bottom:16px;background:#f8d7da;color:#721c24;">🚪 Force Logout (hapus token)</button>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+function renderLocal() {
+  var token = KK22_API.getToken();
+  var user  = KK22_API.getUser();
+  var el = document.getElementById('dbgLocal');
+  var lines = [];
+  lines.push('<span class="k">token       :</span> ' + (token ? '<span class="v">' + esc(token.substring(0, 24)) + '...</span> (' + token.length + ' char)' : '<span class="err">(kosong)</span>'));
+  lines.push('<span class="k">user object :</span>');
+  if (user) {
+    lines.push('  <span class="k">id_user     :</span> ' + esc(user.id_user));
+    lines.push('  <span class="k">nama_lengkap:</span> ' + esc(user.nama_lengkap));
+    lines.push('  <span class="k">no_hp       :</span> ' + esc(user.no_hp));
+    lines.push('  <span class="k">role        :</span> <span class="' + (user.role ? 'ok' : 'err') + '">' + esc(user.role) + '</span>');
+    lines.push('  <span class="k">id_reseller :</span> ' + esc(user.id_reseller || '(kosong)'));
+  } else {
+    lines.push('  <span class="err">(kosong)</span>');
+  }
+  el.innerHTML = lines.join('\n');
+}
+
+async function renderWhoami() {
+  var el = document.getElementById('dbgWhoami');
+  el.innerHTML = '<span class="warn">Memanggil whoami...</span>';
+  var token = KK22_API.getToken();
+  if (!token) {
+    el.innerHTML = '<span class="err">Tidak ada token — tidak bisa whoami. Login dulu.</span>';
+    return null;
+  }
+  var sw = Date.now();
+  var r = await KK22_API.whoami();
+  var dur = Date.now() - sw;
+  var lines = [];
+  if (r.ok && r.data) {
+    var u = r.data;
+    lines.push('<span class="k">ok          :</span> <span class="ok">true</span> (' + dur + ' ms)');
+    lines.push('<span class="k">id_user     :</span> ' + esc(u.id_user));
+    lines.push('<span class="k">nama_lengkap:</span> ' + esc(u.nama_lengkap));
+    lines.push('<span class="k">no_hp       :</span> ' + esc(u.no_hp));
+    lines.push('<span class="k">role        :</span> <span class="ok">' + esc(u.role) + '</span>');
+    lines.push('<span class="k">id_reseller :</span> ' + esc(u.id_reseller || '(kosong)'));
+  } else {
+    lines.push('<span class="k">ok          :</span> <span class="err">false</span> (' + dur + ' ms)');
+    lines.push('<span class="k">error       :</span> <span class="err">' + esc(r.error) + '</span>');
+  }
+  el.innerHTML = lines.join('\n');
+  return r.ok ? r.data : null;
+}
+
+function renderKesimpulan(user, whoamiUser) {
+  var el = document.getElementById('dbgKesimpulan');
+  if (!whoamiUser) {
+    el.innerHTML = '<span class="err">Tidak bisa ambil whoami. Token mungkin expired. Klik Force Logout lalu login ulang.</span>';
+    return;
+  }
+  var role = whoamiUser.role;
+  var roleDesc = {
+    owner: 'Owner — akses penuh (admin users, admin pesanan, admin produk, nama reseller di form)',
+    admin: 'Admin — akses admin pesanan + admin produk + nama reseller di form (TIDAK bisa tambah user)',
+    reseller: 'Reseller — hanya katalog + pesanan sendiri (TIDAK lihat field nama reseller)'
+  };
+  var lines = [];
+  lines.push('<span class="k">Anda login sebagai :</span> <span class="ok">' + esc(whoamiUser.nama_lengkap) + '</span>');
+  lines.push('<span class="k">Role aktif        :</span> <span class="ok">' + esc(role) + '</span>');
+  lines.push('<span class="k">Penjelasan        :</span> ' + (roleDesc[role] || '(role tidak dikenal)'));
+  lines.push('');
+  lines.push('<span class="k">Yang SEHARUSNYA terlihat:</span>');
+  if (role === 'reseller') {
+    lines.push('  • pesan.html      → field "Nama Reseller" <span class="err">TIDAK muncul</span>');
+    lines.push('  • admin-users.html → <span class="err">redirect ke dashboard</span>');
+    lines.push('  • admin-pesanan.html → <span class="err">redirect ke dashboard</span>');
+    lines.push('  • katalog.html    → hanya produk aktif');
+  } else if (role === 'admin') {
+    lines.push('  • pesan.html      → field "Nama Reseller" <span class="ok">muncul</span>');
+    lines.push('  • admin-users.html → <span class="ok">bisa lihat list user</span>, tombol "+ Tambah User" <span class="err">TIDAK muncul</span> (owner-only saat ini)');
+    lines.push('  • admin-pesanan.html → <span class="ok">bisa akses</span>');
+    lines.push('  • katalog.html    → bisa lihat produk nonaktif juga');
+  } else if (role === 'owner') {
+    lines.push('  • pesan.html      → field "Nama Reseller" <span class="ok">muncul</span>');
+    lines.push('  • admin-users.html → <span class="ok">bisa lihat list user + tombol "+ Tambah User" muncul</span>');
+    lines.push('  • admin-pesanan.html → <span class="ok">bisa akses</span>');
+    lines.push('  • katalog.html    → bisa lihat produk nonaktif juga');
+  }
+  el.innerHTML = lines.join('\n');
+}
+
+document.getElementById('btnForceLogout').addEventListener('click', function() {
+  if (!confirm('Hapus token dari localStorage? Setelah ini Anda harus login ulang.')) return;
+  try {
+    localStorage.removeItem(KK22_CONFIG.STORAGE_KEY_TOKEN);
+    localStorage.removeItem(KK22_CONFIG.STORAGE_KEY_USER);
+    localStorage.removeItem('kk22_produk_cache');
+    localStorage.removeItem('kk22_produk_cache_ts');
+    localStorage.removeItem('kk22_reseller_cache');
+    localStorage.removeItem('kk22_reseller_cache_ts');
+    localStorage.removeItem('kk22_cart');
+  } catch (e) {}
+  alert('Semua data lokal dihapus. Redirect ke login...');
+  window.location.href = 'login.html';
+});
+
+document.getElementById('btnRefresh').addEventListener('click', async function() {
+  renderLocal();
+  await renderWhoami();
+  renderKesimpulan(KK22_API.getUser(), KK22_API.getUser());
+});
+
+(async function init() {
+  renderLocal();
+  var whoamiUser = await renderWhoami();
+  renderKesimpulan(KK22_API.getUser(), whoamiUser);
+})();
+</script>
+</body>
+</html>
