@@ -81,9 +81,13 @@
       <p style="font-size:13px;color:#666;margin-bottom:10px;">
         Pilih produk yang akan di-lock di <b id="lockProdukNPocount">0</b> PO terpilih.
       </p>
+      <div class="search-bar" style="margin-bottom:10px;gap:6px;">
+        <input type="text" id="lockProdukSearch" placeholder="Cari produk (cth: bolu)..." autocomplete="off" style="margin:0;">
+        <button type="button" id="lockProdukReset" class="btn-secondary" style="width:auto;margin:0;padding:10px 12px;font-size:12px;flex:0 0 auto;">Reset</button>
+      </div>
       <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:13px;font-weight:600;cursor:pointer;">
         <input type="checkbox" id="lockProdukSelectAll">
-        Pilih Semua Produk
+        Pilih Semua yang Tampil
       </label>
       <div id="lockProdukList" style="max-height:50vh;overflow-y:auto;"></div>
     </div>
@@ -188,7 +192,7 @@ function renderPO() {
   });
 
   var info = filtered.length + ' dari ' + semuaPO.length + ' PO';
-  if (activeStatus) info += ' Ã‚Â· filter: ' + activeStatus;
+  if (activeStatus) info += ' Ãƒâ€šÃ‚Â· filter: ' + activeStatus;
   document.getElementById('countInfo').textContent = info;
 
   var wrap = document.getElementById('poWrap');
@@ -321,6 +325,48 @@ document.getElementById('btnBulkLockAll').addEventListener('click', async functi
   await loadPO();
 });
 
+// ===== State untuk modal Lock Per Produk (persist across search) =====
+var lockProdukData = [];
+var lockProdukSelected = {};
+
+function updateLockProdukCount() {
+  var n = Object.keys(lockProdukSelected).length;
+  var btn = document.getElementById('lockProdukSubmit');
+  if (btn) btn.textContent = n > 0 ? ('Lock ' + n + ' Produk') : 'Lock Produk Terpilih';
+}
+
+function renderLockProdukList(q) {
+  var list = document.getElementById('lockProdukList');
+  if (!list) return;
+  var ql = String(q || '').trim().toLowerCase();
+  var filtered = !ql ? lockProdukData : lockProdukData.filter(function(it) {
+    return String(it.nama_produk || '').toLowerCase().indexOf(ql) !== -1;
+  });
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px;">Tidak ada produk cocok.</div>';
+    return;
+  }
+  var html = '';
+  filtered.forEach(function(it) {
+    var isChk = !!lockProdukSelected[it.nama_produk];
+    html += '<label class="modal-produk-row" style="cursor:pointer;">';
+    html += '<input type="checkbox" class="lock-produk-chk" value="' + esc(it.nama_produk) + '"' + (isChk ? ' checked' : '') + '>';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="font-weight:600;font-size:13px;color:#333;">' + esc(it.nama_produk) + '</div>';
+    html += '<div style="font-size:11px;color:#888;">' + it.n_item + ' item di ' + it.n_po + ' PO &middot; ' + it.total_qty + ' qty</div>';
+    html += '</div>';
+    html += '</label>';
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('.lock-produk-chk').forEach(function(c) {
+    c.addEventListener('change', function() {
+      if (c.checked) lockProdukSelected[c.value] = true;
+      else delete lockProdukSelected[c.value];
+      updateLockProdukCount();
+    });
+  });
+}
+
 document.getElementById('btnBulkLockProduk').addEventListener('click', async function() {
   var ids = getSelectedList();
   if (ids.length === 0) return;
@@ -337,20 +383,13 @@ document.getElementById('btnBulkLockProduk').addEventListener('click', async fun
     showAlert('Tidak ada item pending di PO terpilih.', 'info');
     return;
   }
-  var list = document.getElementById('lockProdukList');
-  var html = '';
-  r.data.items.forEach(function(it) {
-    html += '<label class="modal-produk-row" style="cursor:pointer;">';
-    html += '<input type="checkbox" class="lock-produk-chk" value="' + esc(it.nama_produk) + '">';
-    html += '<div style="flex:1;min-width:0;">';
-    html += '<div style="font-weight:600;font-size:13px;color:#333;">' + esc(it.nama_produk) + '</div>';
-    html += '<div style="font-size:11px;color:#888;">' + it.n_item + ' item di ' + it.n_po + ' PO &middot; ' + it.total_qty + ' qty</div>';
-    html += '</div>';
-    html += '</label>';
-  });
-  list.innerHTML = html;
+  lockProdukData = r.data.items;
+  lockProdukSelected = {};
   document.getElementById('lockProdukNPocount').textContent = ids.length;
   document.getElementById('lockProdukSelectAll').checked = false;
+  document.getElementById('lockProdukSearch').value = '';
+  renderLockProdukList('');
+  updateLockProdukCount();
   document.getElementById('modalLockProduk').style.display = 'flex';
 });
 
@@ -366,7 +405,25 @@ document.getElementById('btnBulkUnlock').addEventListener('click', function() {
 
 document.getElementById('lockProdukSelectAll').addEventListener('change', function() {
   var chk = this.checked;
-  document.querySelectorAll('.lock-produk-chk').forEach(function(c) { c.checked = chk; });
+  document.querySelectorAll('.lock-produk-chk').forEach(function(c) {
+    c.checked = chk;
+    if (chk) lockProdukSelected[c.value] = true;
+    else delete lockProdukSelected[c.value];
+  });
+  updateLockProdukCount();
+});
+
+document.getElementById('lockProdukSearch').addEventListener('input', function() {
+  renderLockProdukList(this.value);
+  document.getElementById('lockProdukSelectAll').checked = false;
+});
+
+document.getElementById('lockProdukReset').addEventListener('click', function() {
+  lockProdukSelected = {};
+  document.getElementById('lockProdukSearch').value = '';
+  document.getElementById('lockProdukSelectAll').checked = false;
+  renderLockProdukList('');
+  updateLockProdukCount();
 });
 
 document.getElementById('lockProdukClose').addEventListener('click', function() {
@@ -378,12 +435,11 @@ document.getElementById('lockProdukCancel').addEventListener('click', function()
 
 document.getElementById('lockProdukSubmit').addEventListener('click', async function() {
   var ids = getSelectedList();
-  var checked = document.querySelectorAll('.lock-produk-chk:checked');
-  if (checked.length === 0) {
+  var produkList = Object.keys(lockProdukSelected);
+  if (produkList.length === 0) {
     showAlert('Pilih minimal 1 produk.', 'error');
     return;
   }
-  var produkList = Array.prototype.map.call(checked, function(c) { return c.value; });
   if (!confirm('Lock ' + produkList.length + ' produk terpilih di ' + ids.length + ' PO?')) return;
   var btn = this;
   btn.disabled = true;
@@ -458,7 +514,7 @@ document.getElementById('btnLogout').addEventListener('click', async function() 
   var r = await KK22_API.whoami();
   if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
   if (r.data.role !== 'admin' && r.data.role !== 'owner') {
-    // bukan admin Ã¢â€ â€™ redirect dashboard (jangan tampilkan halaman)
+    // bukan admin ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ redirect dashboard (jangan tampilkan halaman)
     window.location.href = 'dashboard.html';
     return;
   }
