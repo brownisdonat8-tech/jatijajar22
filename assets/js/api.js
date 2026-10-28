@@ -233,6 +233,29 @@ window.KK22_API = (function() {
     });
   }
 
+  // ========== ADMIN: BULK LOCK / UNLOCK ==========
+  async function getProdukInPOs(idPesananList) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getProdukInPOs', { token: token, id_pesanan_list: idPesananList });
+  }
+
+  async function lockItemsBulk(idPesananList, produkFilter) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const body = { token: token, id_pesanan_list: idPesananList };
+    if (Array.isArray(produkFilter) && produkFilter.length > 0) body.produk_filter = produkFilter;
+    return call('lockItemsBulk', body);
+  }
+
+  async function unlockItemsBulk(idPesananList, alasan, produkFilter) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const body = { token: token, id_pesanan_list: idPesananList, alasan: alasan };
+    if (Array.isArray(produkFilter) && produkFilter.length > 0) body.produk_filter = produkFilter;
+    return call('unlockItemsBulk', body);
+  }
+
   // ========== ADMIN: USER MANAGEMENT ==========
   async function createUser(noHp, pin, role, namaLengkap, idReseller) {
     const token = getToken();
@@ -275,6 +298,9 @@ window.KK22_API = (function() {
     unlockItemPesanan: unlockItemPesanan,
     toggleProdukAktif: toggleProdukAktif,
     createUser: createUser,
-    listUsers: listUsers
+    listUsers: listUsers,
+    getProdukInPOs: getProdukInPOs,
+    lockItemsBulk: lockItemsBulk,
+    unlockItemsBulk: unlockItemsBulk
   };
 })();

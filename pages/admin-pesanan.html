@@ -35,8 +35,30 @@
     <button id="btnRefresh" class="btn-secondary">Refresh</button>
   </div>
 
+  <div class="filter-row" style="margin-bottom:12px;flex-wrap:wrap;gap:10px;align-items:center;">
+    <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:6px;">
+      Tgl Kirim:
+      <input type="date" id="filterTglKirim" style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:auto;">
+    </label>
+    <button id="btnClearTgl" class="btn-secondary" style="width:auto;margin:0;padding:6px 10px;font-size:12px;">Reset</button>
+    <span class="count-info" id="countInfo" style="margin-left:auto;">-</span>
+  </div>
+
   <div class="filter-row" style="margin-bottom:8px;">
-    <span class="count-info" id="countInfo">-</span>
+    <label style="font-size:13px;color:#333;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <input type="checkbox" id="chkSelectAll">
+      Pilih Semua (yang tampil)
+    </label>
+  </div>
+
+  <div id="actionBar" class="bulk-action-bar" style="display:none;">
+    <div class="bulk-info" id="bulkInfo">0 PO dipilih</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button id="btnBulkLockAll" class="btn-bulk btn-bulk-lock">&#128274; Lock Semua</button>
+      <button id="btnBulkLockProduk" class="btn-bulk btn-bulk-produk">&#128274; Lock Per Produk</button>
+      <button id="btnBulkUnlock" class="btn-bulk btn-bulk-unlock">&#128275; Unlock</button>
+      <button id="btnBulkClear" class="btn-bulk btn-bulk-clear">&#10005;</button>
+    </div>
   </div>
 
   <div id="alertBox" class="alert"></div>
@@ -46,6 +68,55 @@
   </div>
 
   <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<!-- MODAL: Lock Per Produk -->
+<div id="modalLockProduk" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Lock Per Produk</h2>
+      <button class="modal-close" id="lockProdukClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;margin-bottom:10px;">
+        Pilih produk yang akan di-lock di <b id="lockProdukNPocount">0</b> PO terpilih.
+      </p>
+      <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:13px;font-weight:600;cursor:pointer;">
+        <input type="checkbox" id="lockProdukSelectAll">
+        Pilih Semua Produk
+      </label>
+      <div id="lockProdukList" style="max-height:50vh;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="lockProdukCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="lockProdukSubmit" type="button" style="flex:1;margin:0;">Lock Produk Terpilih</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Unlock Bulk -->
+<div id="modalUnlock" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Unlock Bulk</h2>
+      <button class="modal-close" id="unlockClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;margin-bottom:10px;">
+        Unlock semua item locked di <b id="unlockNPocount">0</b> PO terpilih.
+      </p>
+      <div class="form-row" style="margin-top:8px;">
+        <label for="unlockAlasan">Alasan Unlock <span style="color:#dc3545">*</span></label>
+        <textarea id="unlockAlasan" placeholder="cth: koreksi input, permintaan reseller..." maxlength="200"></textarea>
+        <div class="hint">Wajib diisi untuk audit trail.</div>
+      </div>
+      <div id="unlockModalAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="unlockCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="unlockSubmit" type="button" style="flex:1;margin:0;">Unlock Semua</button>
+    </div>
+  </div>
 </div>
 
 <script src="../assets/js/config.js"></script>
@@ -77,11 +148,38 @@ function showAlert(msg, type) {
 
 var semuaPO = [];
 var activeStatus = '';
+var activeTglKirim = '';
+var selectedIds = {};
+
+function getSelectedList() {
+  return Object.keys(selectedIds);
+}
+
+function updateActionBar() {
+  var n = getSelectedList().length;
+  var bar = document.getElementById('actionBar');
+  var info = document.getElementById('bulkInfo');
+  if (n === 0) {
+    bar.style.display = 'none';
+  } else {
+    bar.style.display = 'flex';
+    info.textContent = n + ' PO dipilih';
+  }
+  // Update "Pilih Semua"
+  var chkAll = document.getElementById('chkSelectAll');
+  var visibleCards = document.querySelectorAll('.po-card');
+  if (visibleCards.length > 0) {
+    chkAll.checked = (n === visibleCards.length);
+  } else {
+    chkAll.checked = false;
+  }
+}
 
 function renderPO() {
   var q = document.getElementById('q').value.trim().toLowerCase();
   var filtered = semuaPO.filter(function(p) {
     if (activeStatus && String(p.status).toLowerCase() !== activeStatus) return false;
+    if (activeTglKirim && String(p.tgl_kirim || '') !== activeTglKirim) return false;
     if (q) {
       var hay = (String(p.order_number || '') + ' ' + String(p.nama_reseller || '')).toLowerCase();
       if (hay.indexOf(q) === -1) return false;
@@ -90,7 +188,7 @@ function renderPO() {
   });
 
   var info = filtered.length + ' dari ' + semuaPO.length + ' PO';
-  if (activeStatus) info += ' · filter: ' + activeStatus;
+  if (activeStatus) info += ' Ã‚Â· filter: ' + activeStatus;
   document.getElementById('countInfo').textContent = info;
 
   var wrap = document.getElementById('poWrap');
@@ -107,30 +205,49 @@ function renderPO() {
   for (var i = 0; i < filtered.length; i++) {
     var p = filtered[i];
     var st = String(p.status || 'submitted').toLowerCase();
+    var isSelected = !!selectedIds[p.id_pesanan];
     html +=
-      '<div class="po-card" data-id="' + esc(p.id_pesanan) + '">' +
-        '<div class="header">' +
-          '<div style="flex:1;min-width:0;">' +
-            '<div class="reseller">' + esc(p.nama_reseller) + '</div>' +
-            '<div class="order-no">' + esc(p.order_number) + '</div>' +
+      '<div class="po-card ' + (isSelected ? 'selected' : '') + '" data-id="' + esc(p.id_pesanan) + '">' +
+        '<label class="po-card-check" onclick="event.stopPropagation()">' +
+          '<input type="checkbox" class="po-chk" data-id="' + esc(p.id_pesanan) + '"' + (isSelected ? ' checked' : '') + '>' +
+        '</label>' +
+        '<div class="po-card-body">' +
+          '<div class="header">' +
+            '<div style="flex:1;min-width:0;">' +
+              '<div class="reseller">' + esc(p.nama_reseller) + '</div>' +
+              '<div class="order-no">' + esc(p.order_number) + '</div>' +
+            '</div>' +
+            '<span class="badge-status ' + st + '">' + esc(st) + '</span>' +
           '</div>' +
-          '<span class="badge-status ' + st + '">' + esc(st) + '</span>' +
-        '</div>' +
-        '<div class="meta">' +
-          '<span>&#128197; Kirim: <b>' + fmtTgl(p.tgl_kirim) + '</b></span>' +
-          '<span>&#128230; ' + (p.total_item || 0) + ' item &middot; ' + (p.total_qty || 0) + ' qty</span>' +
-          '<span>&#128176; <b>' + rp(p.total_harga) + '</b></span>' +
+          '<div class="meta">' +
+            '<span>&#128197; Kirim: <b>' + fmtTgl(p.tgl_kirim) + '</b></span>' +
+            '<span>&#128230; ' + (p.total_item || 0) + ' item &middot; ' + (p.total_qty || 0) + ' qty</span>' +
+            '<span>&#128176; <b>' + rp(p.total_harga) + '</b></span>' +
+          '</div>' +
         '</div>' +
       '</div>';
   }
   html += '</div>';
   wrap.innerHTML = html;
 
-  wrap.querySelectorAll('.po-card').forEach(function(el) {
+  wrap.querySelectorAll('.po-card-body').forEach(function(el) {
     el.addEventListener('click', function() {
-      window.location.href = 'admin-pesanan-detail.html?id=' + encodeURIComponent(el.dataset.id);
+      var card = el.closest('.po-card');
+      if (card) window.location.href = 'admin-pesanan-detail.html?id=' + encodeURIComponent(card.dataset.id);
     });
   });
+  wrap.querySelectorAll('.po-chk').forEach(function(chk) {
+    chk.addEventListener('change', function(e) {
+      e.stopPropagation();
+      var id = chk.dataset.id;
+      if (chk.checked) selectedIds[id] = true;
+      else delete selectedIds[id];
+      var card = chk.closest('.po-card');
+      if (card) card.classList.toggle('selected', chk.checked);
+      updateActionBar();
+    });
+  });
+  updateActionBar();
 }
 
 async function loadPO() {
@@ -150,6 +267,174 @@ document.getElementById('q').addEventListener('input', renderPO);
 document.getElementById('btnRefresh').addEventListener('click', async function() {
   await loadPO();
   showAlert('Pesanan diperbarui', 'info');
+});
+
+// ============ BULK ACTION HANDLERS (F8.4d) ============
+document.getElementById('chkSelectAll').addEventListener('change', function() {
+  var chk = this.checked;
+  document.querySelectorAll('.po-card').forEach(function(card) {
+    var id = card.dataset.id;
+    var cb = card.querySelector('.po-chk');
+    if (!cb) return;
+    cb.checked = chk;
+    if (chk) selectedIds[id] = true;
+    else delete selectedIds[id];
+    card.classList.toggle('selected', chk);
+  });
+  updateActionBar();
+});
+
+document.getElementById('filterTglKirim').addEventListener('change', function() {
+  activeTglKirim = this.value || '';
+  selectedIds = {};
+  renderPO();
+});
+
+document.getElementById('btnClearTgl').addEventListener('click', function() {
+  document.getElementById('filterTglKirim').value = '';
+  activeTglKirim = '';
+  selectedIds = {};
+  renderPO();
+});
+
+document.getElementById('btnBulkClear').addEventListener('click', function() {
+  selectedIds = {};
+  renderPO();
+});
+
+document.getElementById('btnBulkLockAll').addEventListener('click', async function() {
+  var ids = getSelectedList();
+  if (ids.length === 0) return;
+  if (ids.length > 100) { showAlert('Maksimal 100 PO per batch.', 'error'); return; }
+  if (!confirm('Lock semua item PENDING di ' + ids.length + ' PO terpilih?')) return;
+  var btn = this;
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Memproses...';
+  var r = await KK22_API.lockItemsBulk(ids);
+  btn.disabled = false;
+  btn.textContent = orig;
+  if (!r.ok) { showAlert(r.error || 'Gagal lock.', 'error'); return; }
+  var d = r.data;
+  showAlert('Locked ' + d.total_locked + ' item di ' + d.n_po_affected + ' PO.' + (d.total_skipped > 0 ? ' ' + d.total_skipped + ' dilewati.' : ''), 'success');
+  selectedIds = {};
+  await loadPO();
+});
+
+document.getElementById('btnBulkLockProduk').addEventListener('click', async function() {
+  var ids = getSelectedList();
+  if (ids.length === 0) return;
+  if (ids.length > 100) { showAlert('Maksimal 100 PO per batch.', 'error'); return; }
+  var btn = this;
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Memuat...';
+  var r = await KK22_API.getProdukInPOs(ids);
+  btn.disabled = false;
+  btn.textContent = orig;
+  if (!r.ok) { showAlert(r.error || 'Gagal memuat produk.', 'error'); return; }
+  if (!r.data.items || r.data.items.length === 0) {
+    showAlert('Tidak ada item pending di PO terpilih.', 'info');
+    return;
+  }
+  var list = document.getElementById('lockProdukList');
+  var html = '';
+  r.data.items.forEach(function(it) {
+    html += '<label class="modal-produk-row" style="cursor:pointer;">';
+    html += '<input type="checkbox" class="lock-produk-chk" value="' + esc(it.nama_produk) + '">';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="font-weight:600;font-size:13px;color:#333;">' + esc(it.nama_produk) + '</div>';
+    html += '<div style="font-size:11px;color:#888;">' + it.n_item + ' item di ' + it.n_po + ' PO &middot; ' + it.total_qty + ' qty</div>';
+    html += '</div>';
+    html += '</label>';
+  });
+  list.innerHTML = html;
+  document.getElementById('lockProdukNPocount').textContent = ids.length;
+  document.getElementById('lockProdukSelectAll').checked = false;
+  document.getElementById('modalLockProduk').style.display = 'flex';
+});
+
+document.getElementById('btnBulkUnlock').addEventListener('click', function() {
+  var ids = getSelectedList();
+  if (ids.length === 0) return;
+  if (ids.length > 100) { showAlert('Maksimal 100 PO per batch.', 'error'); return; }
+  document.getElementById('unlockNPocount').textContent = ids.length;
+  document.getElementById('unlockAlasan').value = '';
+  document.getElementById('unlockModalAlert').className = 'alert';
+  document.getElementById('modalUnlock').style.display = 'flex';
+});
+
+document.getElementById('lockProdukSelectAll').addEventListener('change', function() {
+  var chk = this.checked;
+  document.querySelectorAll('.lock-produk-chk').forEach(function(c) { c.checked = chk; });
+});
+
+document.getElementById('lockProdukClose').addEventListener('click', function() {
+  document.getElementById('modalLockProduk').style.display = 'none';
+});
+document.getElementById('lockProdukCancel').addEventListener('click', function() {
+  document.getElementById('modalLockProduk').style.display = 'none';
+});
+
+document.getElementById('lockProdukSubmit').addEventListener('click', async function() {
+  var ids = getSelectedList();
+  var checked = document.querySelectorAll('.lock-produk-chk:checked');
+  if (checked.length === 0) {
+    showAlert('Pilih minimal 1 produk.', 'error');
+    return;
+  }
+  var produkList = Array.prototype.map.call(checked, function(c) { return c.value; });
+  if (!confirm('Lock ' + produkList.length + ' produk terpilih di ' + ids.length + ' PO?')) return;
+  var btn = this;
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Memproses...';
+  var r = await KK22_API.lockItemsBulk(ids, produkList);
+  btn.disabled = false;
+  btn.textContent = orig;
+  if (!r.ok) {
+    showAlert(r.error || 'Gagal lock.', 'error');
+    return;
+  }
+  document.getElementById('modalLockProduk').style.display = 'none';
+  showAlert('Locked ' + r.data.total_locked + ' item di ' + r.data.n_po_affected + ' PO.', 'success');
+  selectedIds = {};
+  await loadPO();
+});
+
+document.getElementById('unlockClose').addEventListener('click', function() {
+  document.getElementById('modalUnlock').style.display = 'none';
+});
+document.getElementById('unlockCancel').addEventListener('click', function() {
+  document.getElementById('modalUnlock').style.display = 'none';
+});
+
+document.getElementById('unlockSubmit').addEventListener('click', async function() {
+  var ids = getSelectedList();
+  var alasan = document.getElementById('unlockAlasan').value.trim();
+  if (!alasan) {
+    var b = document.getElementById('unlockModalAlert');
+    b.className = 'alert alert-error show';
+    b.textContent = 'Alasan wajib diisi untuk audit.';
+    return;
+  }
+  var btn = this;
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Memproses...';
+  var r = await KK22_API.unlockItemsBulk(ids, alasan);
+  btn.disabled = false;
+  btn.textContent = orig;
+  if (!r.ok) {
+    var b2 = document.getElementById('unlockModalAlert');
+    b2.className = 'alert alert-error show';
+    b2.textContent = r.error || 'Gagal unlock.';
+    return;
+  }
+  document.getElementById('modalUnlock').style.display = 'none';
+  showAlert('Unlocked ' + r.data.total_unlocked + ' item di ' + r.data.n_po_affected + ' PO.', 'success');
+  selectedIds = {};
+  await loadPO();
 });
 
 document.querySelectorAll('#tabs button').forEach(function(btn) {
@@ -173,7 +458,7 @@ document.getElementById('btnLogout').addEventListener('click', async function() 
   var r = await KK22_API.whoami();
   if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
   if (r.data.role !== 'admin' && r.data.role !== 'owner') {
-    // bukan admin → redirect dashboard (jangan tampilkan halaman)
+    // bukan admin Ã¢â€ â€™ redirect dashboard (jangan tampilkan halaman)
     window.location.href = 'dashboard.html';
     return;
   }

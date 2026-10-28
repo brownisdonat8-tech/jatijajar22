@@ -152,6 +152,209 @@ function handleUnlockItemPesanan_(body) {
 // TOGGLE PRODUK AKTIF
 // ============================================================
 
+// ============================================================
+// BULK LOCK / UNLOCK ITEMS (F8.4d)
+// Admin/owner only. Maks 100 PO per batch untuk safety LockService.
+// ============================================================
+
+function handleGetProdukInPOs_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPesananList = Array.isArray(body.id_pesanan_list) ? body.id_pesanan_list.map(String) : [];
+  if (idPesananList.length === 0) return jsonResponse_({ ok: false, error: 'id_pesanan_list wajib (min 1).' });
+  if (idPesananList.length > 100) return jsonResponse_({ ok: false, error: 'Maksimal 100 PO per batch.' });
+
+  const shD = getSheet_(CONFIG.SHEETS.DETAIL_PESANAN);
+  const last = shD.getLastRow();
+  if (last < 2) return jsonResponse_({ ok: true, data: { items: [] } });
+
+  const data = shD.getRange(2, 1, last - 1, 14).getValues();
+  const targetSet = {};
+  idPesananList.forEach(function(id) { targetSet[id] = true; });
+
+  const agg = {};
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    const idPes = String(r[1] || '');
+    if (!targetSet[idPes]) continue;
+    const st = String(r[11] || 'pending').toLowerCase();
+    if (st !== 'pending') continue;
+
+    const nama = String(r[3] || '').trim();
+    if (!nama) continue;
+    const key = nama.toLowerCase();
+    const qty = Number(r[5]) || 0;
+
+    if (!agg[key]) {
+      agg[key] = { nama_produk: nama, n_item: 0, total_qty: 0, po_set: {} };
+    }
+    agg[key].n_item++;
+    agg[key].total_qty += qty;
+    agg[key].po_set[idPes] = true;
+  }
+
+  const items = Object.keys(agg).map(function(k) {
+    return {
+      nama_produk: agg[k].nama_produk,
+      n_item: agg[k].n_item,
+      n_po: Object.keys(agg[k].po_set).length,
+      total_qty: agg[k].total_qty
+    };
+  });
+  items.sort(function(a, b) { return a.nama_produk.localeCompare(b.nama_produk); });
+
+  return jsonResponse_({ ok: true, data: { total_produk: items.length, items: items } });
+}
+
+function handleLockItemsBulk_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPesananList = Array.isArray(body.id_pesanan_list) ? body.id_pesanan_list.map(String) : [];
+  if (idPesananList.length === 0) return jsonResponse_({ ok: false, error: 'id_pesanan_list wajib (min 1).' });
+  if (idPesananList.length > 100) return jsonResponse_({ ok: false, error: 'Maksimal 100 PO per batch.' });
+
+  const produkFilter = Array.isArray(body.produk_filter) ? body.produk_filter.map(String) : null;
+  const produkFilterLower = produkFilter ? produkFilter.map(function(s) { return s.toLowerCase(); }) : null;
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shD = getSheet_(CONFIG.SHEETS.DETAIL_PESANAN);
+    const last = shD.getLastRow();
+    if (last < 2) return jsonResponse_({ ok: true, data: { total_locked: 0, total_skipped: 0 } });
+
+    const data = shD.getRange(2, 1, last - 1, 14).getValues();
+    const targetSet = {};
+    idPesananList.forEach(function(id) { targetSet[id] = true; });
+
+    const now = nowJakarta_();
+    let totalLocked = 0;
+    let totalSkipped = 0;
+    const affectedPos = {};
+
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      const idPes = String(r[1] || '');
+      if (!targetSet[idPes]) continue;
+
+      if (produkFilterLower) {
+        const nama = String(r[3] || '').toLowerCase();
+        if (produkFilterLower.indexOf(nama) === -1) continue;
+      }
+
+      const st = String(r[11] || 'pending').toLowerCase();
+      if (st !== 'pending') { totalSkipped++; continue; }
+
+      shD.getRange(i + 2, 12).setValue('locked');
+      shD.getRange(i + 2, 13).setValue(now);
+      shD.getRange(i + 2, 14).setValue(user.id_user);
+      totalLocked++;
+      affectedPos[idPes] = true;
+    }
+
+    Object.keys(affectedPos).forEach(function(idPes) {
+      try { updateHeaderStatusByRekap_(idPes); } catch (e) {}
+    });
+
+    try {
+      logAktivitas_(user, 'lockItemsBulk',
+        'Bulk lock: ' + totalLocked + ' item di ' + Object.keys(affectedPos).length +
+        ' PO' + (produkFilter ? ' (filter ' + produkFilter.length + ' produk)' : ''));
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: {
+        total_locked: totalLocked,
+        total_skipped: totalSkipped,
+        n_po_affected: Object.keys(affectedPos).length
+      }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleUnlockItemsBulk_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPesananList = Array.isArray(body.id_pesanan_list) ? body.id_pesanan_list.map(String) : [];
+  if (idPesananList.length === 0) return jsonResponse_({ ok: false, error: 'id_pesanan_list wajib (min 1).' });
+  if (idPesananList.length > 100) return jsonResponse_({ ok: false, error: 'Maksimal 100 PO per batch.' });
+
+  const produkFilter = Array.isArray(body.produk_filter) ? body.produk_filter.map(String) : null;
+  const produkFilterLower = produkFilter ? produkFilter.map(function(s) { return s.toLowerCase(); }) : null;
+
+  const alasan = String(body.alasan || '').trim();
+  if (!alasan) return jsonResponse_({ ok: false, error: 'Alasan wajib diisi untuk audit trail.' });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shD = getSheet_(CONFIG.SHEETS.DETAIL_PESANAN);
+    const last = shD.getLastRow();
+    if (last < 2) return jsonResponse_({ ok: true, data: { total_unlocked: 0 } });
+
+    const data = shD.getRange(2, 1, last - 1, 14).getValues();
+    const targetSet = {};
+    idPesananList.forEach(function(id) { targetSet[id] = true; });
+
+    let totalUnlocked = 0;
+    let totalSkipped = 0;
+    const affectedPos = {};
+
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      const idPes = String(r[1] || '');
+      if (!targetSet[idPes]) continue;
+
+      if (produkFilterLower) {
+        const nama = String(r[3] || '').toLowerCase();
+        if (produkFilterLower.indexOf(nama) === -1) continue;
+      }
+
+      const st = String(r[11] || 'pending').toLowerCase();
+      if (st !== 'locked') { totalSkipped++; continue; }
+
+      shD.getRange(i + 2, 12).setValue('pending');
+      shD.getRange(i + 2, 13).setValue('');
+      shD.getRange(i + 2, 14).setValue('');
+      totalUnlocked++;
+      affectedPos[idPes] = true;
+    }
+
+    Object.keys(affectedPos).forEach(function(idPes) {
+      try { updateHeaderStatusByRekap_(idPes); } catch (e) {}
+    });
+
+    try {
+      logAktivitas_(user, 'unlockItemsBulk',
+        'Bulk unlock: ' + totalUnlocked + ' item di ' + Object.keys(affectedPos).length +
+        ' PO, alasan: ' + alasan);
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: {
+        total_unlocked: totalUnlocked,
+        total_skipped: totalSkipped,
+        n_po_affected: Object.keys(affectedPos).length,
+        alasan: alasan
+      }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
 function handleToggleProdukAktif_(body) {
   const user = validateToken_(body.token);
   if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau sudah expired.' });
