@@ -10,7 +10,7 @@
 <div class="container-wide">
   <nav class="navbar">
     <div class="brand">Kunang-kunang <span class="dot">22</span></div>
-    <div class="nav-links">
+    <div class="nav-links" id="navLinks">
       <a href="katalog.html">Katalog</a>
       <a href="pesan.html" class="cart-btn">Keranjang <span class="cart-badge" id="cartCount">0</span></a>
       <a href="dashboard.html" class="active">Dashboard</a>
@@ -25,11 +25,11 @@
     <div class="row"><span class="lbl">Status</span><span class="val"><span id="loading" class="badge">Memuat...</span></span></div>
   </div>
 
-  <div class="alert alert-info show" style="margin-top:0;margin-bottom:16px;">
-    Selamat datang. Pilih menu di atas untuk mulai memesan.
+  <div id="adminBadge" style="display:none;background:#fff3cd;color:#856404;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;border:1px solid #ffe69c;">
+    <b>Mode Admin/Owner</b> &mdash; Anda bisa kelola pesanan, user, dan produk.
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px;" id="tileGrid">
     <a href="katalog.html" style="text-decoration:none;">
       <div class="produk-card" style="align-items:center;text-align:center;cursor:pointer;">
         <div style="font-size:32px;margin-bottom:6px;">&#128230;</div>
@@ -59,6 +59,47 @@ document.getElementById('verApp').textContent = 'v' + KK22_CONFIG.APP_VERSION;
 document.getElementById('cartCount').textContent = KK22_CART.count();
 document.getElementById('cartInfo').textContent = KK22_CART.count() + ' item';
 
+function buildAdminNav() {
+  var navLinks = document.getElementById('navLinks');
+  var dashboardLink = navLinks.querySelector('a.active');
+  if (!dashboardLink) return;
+
+  var adminPesanan = document.createElement('a');
+  adminPesanan.href = 'admin-pesanan.html';
+  adminPesanan.textContent = 'Admin Pesanan';
+
+  var adminUsers = document.createElement('a');
+  adminUsers.href = 'admin-users.html';
+  adminUsers.textContent = 'Admin Users';
+
+  navLinks.insertBefore(adminUsers, dashboardLink);
+  navLinks.insertBefore(adminPesanan, adminUsers);
+}
+
+function buildAdminTiles() {
+  var grid = document.getElementById('tileGrid');
+  if (!grid) return;
+
+  var tiles = [
+    { href: 'admin-pesanan.html', icon: '&#128203;', label: 'Admin Pesanan', desc: 'Kelola PO, lock item' },
+    { href: 'admin-users.html',   icon: '&#128101;', label: 'Admin Users',   desc: 'Kelola akun user' },
+    { href: 'admin-produk.html',  icon: '&#127849;', label: 'Admin Produk',  desc: 'Aktif/nonaktif produk' }
+  ];
+
+  tiles.forEach(function(t) {
+    var a = document.createElement('a');
+    a.href = t.href;
+    a.style.textDecoration = 'none';
+    a.innerHTML =
+      '<div class="produk-card" style="align-items:center;text-align:center;cursor:pointer;">' +
+        '<div style="font-size:32px;margin-bottom:6px;">' + t.icon + '</div>' +
+        '<div style="font-weight:600;color:#333;">' + t.label + '</div>' +
+        '<div style="font-size:11px;color:#888;">' + t.desc + '</div>' +
+      '</div>';
+    grid.appendChild(a);
+  });
+}
+
 async function init() {
   var token = KK22_API.getToken();
   if (!token) { window.location.href = 'login.html'; return; }
@@ -77,6 +118,12 @@ async function init() {
     '<div class="row"><span class="lbl">No HP</span><span class="val">' + u.no_hp + '</span></div>' +
     '<div class="row"><span class="lbl">Role</span><span class="val"><span class="' + roleClass + '">' + u.role + '</span></span></div>' +
     (u.id_reseller ? '<div class="row"><span class="lbl">ID Reseller</span><span class="val">' + u.id_reseller + '</span></div>' : '');
+
+  if (u.role === 'owner' || u.role === 'admin') {
+    document.getElementById('adminBadge').style.display = 'block';
+    buildAdminNav();
+    buildAdminTiles();
+  }
 }
 
 async function doLogout() {
