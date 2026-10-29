@@ -176,9 +176,9 @@ function addPriceListSheets() {
       'id_price_list', 'nama_paket', 'deskripsi',
       'aktif', 'tgl_dibuat', 'diupdate_oleh', 'tgl_update_terakhir'
     ]);
-    Logger.log('✅ Sheet ' + name1 + ' dibuat (7 kolom)');
+    Logger.log('âœ… Sheet ' + name1 + ' dibuat (7 kolom)');
   } else {
-    Logger.log('ℹ Sheet ' + name1 + ' sudah ada. Skip.');
+    Logger.log('â„¹ Sheet ' + name1 + ' sudah ada. Skip.');
   }
 
   // 2) PRICE_LIST_ITEMS
@@ -188,9 +188,9 @@ function addPriceListSheets() {
       'id_price_list_item', 'id_price_list', 'nama_produk',
       'harga', 'tgl_dibuat', 'tgl_update_terakhir'
     ]);
-    Logger.log('✅ Sheet ' + name2 + ' dibuat (6 kolom)');
+    Logger.log('âœ… Sheet ' + name2 + ' dibuat (6 kolom)');
   } else {
-    Logger.log('ℹ Sheet ' + name2 + ' sudah ada. Skip.');
+    Logger.log('â„¹ Sheet ' + name2 + ' sudah ada. Skip.');
   }
 }
 
@@ -198,18 +198,84 @@ function addResellerIdPriceListColumn() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   const sh = ss.getSheetByName(CONFIG.SHEETS.RESELLER);
   if (!sh) {
-    Logger.log('❌ Sheet RESELLER tidak ditemukan');
+    Logger.log('âŒ Sheet RESELLER tidak ditemukan');
     return;
   }
   const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   const alreadyHas = headers.some(function(h) { return String(h).toLowerCase() === 'id_price_list'; });
   if (alreadyHas) {
-    Logger.log('ℹ Kolom id_price_list sudah ada. Skip.');
+    Logger.log('â„¹ Kolom id_price_list sudah ada. Skip.');
     return;
   }
   const newCol = headers.length + 1;
   sh.getRange(1, newCol).setValue('id_price_list');
-  Logger.log('✅ Kolom id_price_list ditambahkan di kolom ke-' + newCol + ' (' + (headers.length + 1) + ')');
+  Logger.log('âœ… Kolom id_price_list ditambahkan di kolom ke-' + newCol + ' (' + (headers.length + 1) + ')');
+}
+
+// ============================================================
+// F9.7A - MANUAL: Setup 2 sheet Program + kolom PESANAN untuk program
+// Jalankan sekali dari Apps Script editor. Idempotent (aman run 2x).
+// ============================================================
+function addProgramSheets() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+  // 1) PROGRAMS
+  const name1 = CONFIG.SHEETS.PROGRAMS;
+  if (!ss.getSheetByName(name1)) {
+    createSheet_(ss, name1, [
+      'id_program', 'nama_program', 'deskripsi',
+      'tgl_mulai', 'tgl_selesai', 'aktif',
+      'mode_approval', 'visibility', 'kombinasi_mode', 'kalkulasi_mode', 'priority',
+      'target_type', 'target_ids', 'basis_harga',
+      'max_diskon_per_order', 'max_usage_per_customer', 'max_usage_total', 'current_usage',
+      'tgl_dibuat', 'diupdate_oleh', 'tgl_update_terakhir'
+    ]);
+    Logger.log('✅ Sheet ' + name1 + ' dibuat (21 kolom)');
+  } else {
+    Logger.log('ℹ Sheet ' + name1 + ' sudah ada. Skip.');
+  }
+
+  // 2) PROGRAM_RULES
+  const name2 = CONFIG.SHEETS.PROGRAM_RULES;
+  if (!ss.getSheetByName(name2)) {
+    createSheet_(ss, name2, [
+      'id_rule', 'id_program', 'urutan',
+      'rule_type', 'scope', 'scope_ids', 'parameter',
+      'tgl_dibuat', 'tgl_update_terakhir'
+    ]);
+    Logger.log('✅ Sheet ' + name2 + ' dibuat (9 kolom)');
+  } else {
+    Logger.log('ℹ Sheet ' + name2 + ' sudah ada. Skip.');
+  }
+}
+
+function addPesananProgramColumns() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  const sh = ss.getSheetByName(CONFIG.SHEETS.PESANAN);
+  if (!sh) {
+    Logger.log('❌ Sheet PESANAN tidak ditemukan');
+    return;
+  }
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const existingLower = headers.map(function(h) { return String(h).toLowerCase(); });
+  const newCols = [
+    'id_program', 'program_nama', 'program_snapshot',
+    'approval_status', 'approved_by', 'approved_at', 'rejection_reason'
+  ];
+  let nextCol = headers.length + 1;
+  const added = [];
+  newCols.forEach(function(col) {
+    if (existingLower.indexOf(col.toLowerCase()) === -1) {
+      sh.getRange(1, nextCol).setValue(col);
+      added.push(col);
+      nextCol++;
+    }
+  });
+  if (added.length === 0) {
+    Logger.log('ℹ Semua kolom PESANAN sudah ada. Skip.');
+  } else {
+    Logger.log('✅ Kolom PESANAN ditambahkan: ' + added.join(', '));
+  }
 }
 
 function testConnection() {

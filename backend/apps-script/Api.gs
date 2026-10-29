@@ -59,6 +59,13 @@ function doPost(e) {
       case 'bulkSetPriceListItems':     return handleBulkSetPriceListItems_(body);
       case 'assignPriceListToReseller': return handleAssignPriceListToReseller_(body);
 case 'bulkAssignPriceList':       return handleBulkAssignPriceList_(body);
+case 'getPrograms':                return handleGetPrograms_(body);
+case 'getProgramDetail':          return handleGetProgramDetail_(body);
+case 'createProgram':             return handleCreateProgram_(body);
+case 'updateProgram':             return handleUpdateProgram_(body);
+case 'toggleProgramAktif':        return handleToggleProgramAktif_(body);
+case 'setProgramRules':           return handleSetProgramRules_(body);
+case 'deleteProgram':             return handleDeleteProgram_(body);
       case 'getResellerAssignments':    return handleGetResellerAssignments_(body);
       case 'getResellerList':    return handleGetResellerList_(body);
       case 'createUser':         return handleCreateUser_(body);

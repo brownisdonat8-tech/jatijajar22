@@ -440,7 +440,7 @@ function handleGetDetailPesanan_(body) {
 }
 
 // ============================================================
-// UPDATE PESANAN ITEMS (F7.5 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â edit PO selama masih pending/partial_locked)
+// UPDATE PESANAN ITEMS (F7.5 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â edit PO selama masih pending/partial_locked)
 // Reseller bisa edit PO sendiri; admin/owner bisa edit semua.
 // Locked items: readonly (tidak boleh diubah).
 // items[] = FINAL list item PENDING saja (locked tidak dikirim, tetap ada).
@@ -661,7 +661,7 @@ function validasiItemsForUpdate_(rawItems) {
 }
 
 // ============================================================
-// F9.1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â HARGA KHUSUS PER RESELLER
+// F9.1 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â HARGA KHUSUS PER RESELLER
 // ============================================================
 
 function getHargaOverrideForReseller_(idReseller) {
@@ -861,7 +861,7 @@ function handleDeleteHargaKhusus_(body) {
 }
 
 // ============================================================
-// F9.1b Ã¢â‚¬â€ PRICE LISTS (PAKET HARGA)
+// F9.1b ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PRICE LISTS (PAKET HARGA)
 // ============================================================
 
 function getNextPriceListId_() {
@@ -1610,6 +1610,442 @@ function handleBulkAssignPriceList_(body) {
         skipped_list: notFound
       }
     });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+// ============================================================
+// F9.7A — PROGRAMS (PROGRAM HARGA / DISKON) — CRUD
+// ============================================================
+
+function getProgramById_(idProgram) {
+  const sh = getSheet_(CONFIG.SHEETS.PROGRAMS);
+  const last = sh.getLastRow();
+  if (last < 2) return null;
+  const data = sh.getRange(2, 1, last - 1, 21).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (String(data[i][0]) === String(idProgram)) {
+      return {
+        id_program: String(data[i][0]),
+        nama_program: String(data[i][1] || ''),
+        deskripsi: String(data[i][2] || ''),
+        tgl_mulai: String(data[i][3] || ''),
+        tgl_selesai: String(data[i][4] || ''),
+        aktif: String(data[i][5] || '').toUpperCase() === 'TRUE',
+        mode_approval: String(data[i][6] || 'auto'),
+        visibility: String(data[i][7] || 'visible'),
+        kombinasi_mode: String(data[i][8] || 'exclusive'),
+        kalkulasi_mode: String(data[i][9] || 'sequential'),
+        priority: Number(data[i][10]) || 10,
+        target_type: String(data[i][11] || 'all'),
+        target_ids: String(data[i][12] || '[]'),
+        basis_harga: String(data[i][13] || 'auto'),
+        max_diskon_per_order: Number(data[i][14]) || 0,
+        max_usage_per_customer: Number(data[i][15]) || 0,
+        max_usage_total: Number(data[i][16]) || 0,
+        current_usage: Number(data[i][17]) || 0,
+        tgl_dibuat: String(data[i][18] || ''),
+        diupdate_oleh: String(data[i][19] || ''),
+        tgl_update_terakhir: String(data[i][20] || ''),
+        rowIndex: i + 2
+      };
+    }
+  }
+  return null;
+}
+
+function getProgramRules_(idProgram) {
+  const sh = getSheet_(CONFIG.SHEETS.PROGRAM_RULES);
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  const data = sh.getRange(2, 1, last - 1, 9).getValues();
+  const rules = [];
+  for (let i = 0; i < data.length; i++) {
+    if (String(data[i][1]) !== String(idProgram)) continue;
+    rules.push({
+      id_rule: String(data[i][0]),
+      id_program: String(data[i][1]),
+      urutan: Number(data[i][2]) || 1,
+      rule_type: String(data[i][3] || ''),
+      scope: String(data[i][4] || 'all'),
+      scope_ids: String(data[i][5] || '[]'),
+      parameter: String(data[i][6] || '{}'),
+      tgl_dibuat: String(data[i][7] || ''),
+      tgl_update_terakhir: String(data[i][8] || ''),
+      rowIndex: i + 2
+    });
+  }
+  rules.sort(function(a, b) { return a.urutan - b.urutan; });
+  return rules;
+}
+
+function getNextProgramId_() {
+  const sh = getSheet_(CONFIG.SHEETS.PROGRAMS);
+  const last = sh.getLastRow();
+  if (last < 2) return 'KK22-PRG-0001';
+  const data = sh.getRange(2, 1, last - 1, 1).getValues();
+  let maxNum = 0;
+  data.forEach(function(r) {
+    const m = String(r[0] || '').match(/-PRG-(\d+)/);
+    if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
+  });
+  return 'KK22-PRG-' + pad4_(maxNum + 1);
+}
+
+function getMaxProgramRuleNum_() {
+  const sh = getSheet_(CONFIG.SHEETS.PROGRAM_RULES);
+  const last = sh.getLastRow();
+  if (last < 2) return 0;
+  const data = sh.getRange(2, 1, last - 1, 1).getValues();
+  let maxNum = 0;
+  data.forEach(function(r) {
+    const m = String(r[0] || '').match(/-PRL-(\d+)/);
+    if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
+  });
+  return maxNum;
+}
+
+const VALID_PROGRAM_RULE_TYPES = [
+  'item_fixed_price', 'item_discount_pct', 'item_discount_fixed',
+  'item_tiered_qty', 'item_bxgy', 'item_bundle',
+  'order_discount_pct', 'order_discount_fixed',
+  'order_tiered_total', 'order_tiered_qty',
+  'order_min_qty', 'order_min_value',
+  'order_free_shipping', 'gift_with_purchase'
+];
+
+function validateProgramRules_(rules) {
+  if (!Array.isArray(rules) || rules.length === 0) return { ok: false, error: 'Minimal 1 rule.' };
+  for (let i = 0; i < rules.length; i++) {
+    const rt = String(rules[i].rule_type || '').toLowerCase();
+    if (VALID_PROGRAM_RULE_TYPES.indexOf(rt) === -1) {
+      return { ok: false, error: 'Rule ke-' + (i + 1) + ': rule_type tidak valid: ' + rt };
+    }
+  }
+  return { ok: true };
+}
+
+function handleGetPrograms_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const sh = getSheet_(CONFIG.SHEETS.PROGRAMS);
+  const last = sh.getLastRow();
+  const items = [];
+  if (last >= 2) {
+    const data = sh.getRange(2, 1, last - 1, 21).getValues();
+
+    const shR = getSheet_(CONFIG.SHEETS.PROGRAM_RULES);
+    const lastR = shR.getLastRow();
+    const ruleCount = {};
+    if (lastR >= 2) {
+      const dataR = shR.getRange(2, 1, lastR - 1, 2).getValues();
+      dataR.forEach(function(r) {
+        const idP = String(r[1]);
+        ruleCount[idP] = (ruleCount[idP] || 0) + 1;
+      });
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      items.push({
+        id_program: String(r[0]),
+        nama_program: String(r[1] || ''),
+        deskripsi: String(r[2] || ''),
+        tgl_mulai: String(r[3] || ''),
+        tgl_selesai: String(r[4] || ''),
+        aktif: String(r[5] || '').toUpperCase() === 'TRUE',
+        mode_approval: String(r[6] || 'auto'),
+        visibility: String(r[7] || 'visible'),
+        kombinasi_mode: String(r[8] || 'exclusive'),
+        kalkulasi_mode: String(r[9] || 'sequential'),
+        priority: Number(r[10]) || 10,
+        target_type: String(r[11] || 'all'),
+        basis_harga: String(r[13] || 'auto'),
+        total_rules: ruleCount[String(r[0])] || 0,
+        current_usage: Number(r[17]) || 0,
+        tgl_dibuat: String(r[18] || '')
+      });
+    }
+  }
+  items.sort(function(a, b) { return b.priority - a.priority || a.nama_program.localeCompare(b.nama_program); });
+  return jsonResponse_({ ok: true, data: { total: items.length, items: items } });
+}
+
+function handleGetProgramDetail_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idProgram = String(body.id_program || '').trim();
+  if (!idProgram) return jsonResponse_({ ok: false, error: 'id_program wajib diisi.' });
+
+  const header = getProgramById_(idProgram);
+  if (!header) return jsonResponse_({ ok: false, error: 'Program tidak ditemukan.' });
+
+  const rules = getProgramRules_(idProgram);
+  return jsonResponse_({ ok: true, data: { header: header, rules: rules } });
+}
+
+function handleCreateProgram_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const namaProgram = String(body.nama_program || '').trim();
+  if (!namaProgram) return jsonResponse_({ ok: false, error: 'nama_program wajib diisi.' });
+
+  const deskripsi = String(body.deskripsi || '').trim();
+  const tglMulai = String(body.tgl_mulai || '').trim();
+  const tglSelesai = String(body.tgl_selesai || '').trim();
+  const modeApproval = String(body.mode_approval || 'auto').toLowerCase();
+  const visibility = String(body.visibility || 'visible').toLowerCase();
+  const kombinasiMode = String(body.kombinasi_mode || 'exclusive').toLowerCase();
+  const kalkulasiMode = String(body.kalkulasi_mode || 'sequential').toLowerCase();
+  const priority = Number(body.priority) || 10;
+  const targetType = String(body.target_type || 'all').toLowerCase();
+  const targetIds = Array.isArray(body.target_ids) ? body.target_ids : [];
+  const basisHarga = String(body.basis_harga || 'auto').toLowerCase();
+  const maxDiskon = Number(body.max_diskon_per_order) || 0;
+  const maxUsagePerCustomer = Number(body.max_usage_per_customer) || 0;
+  const maxUsageTotal = Number(body.max_usage_total) || 0;
+  const rules = Array.isArray(body.rules) ? body.rules : [];
+
+  if (['auto','manual'].indexOf(modeApproval) === -1) return jsonResponse_({ ok: false, error: 'mode_approval harus: auto/manual' });
+  if (['visible','auto_apply'].indexOf(visibility) === -1) return jsonResponse_({ ok: false, error: 'visibility harus: visible/auto_apply' });
+  if (['exclusive','stackable'].indexOf(kombinasiMode) === -1) return jsonResponse_({ ok: false, error: 'kombinasi_mode harus: exclusive/stackable' });
+  if (['sequential','parallel','best_for_customer'].indexOf(kalkulasiMode) === -1) return jsonResponse_({ ok: false, error: 'kalkulasi_mode harus: sequential/parallel/best_for_customer' });
+  if (['all','filter','custom'].indexOf(targetType) === -1) return jsonResponse_({ ok: false, error: 'target_type harus: all/filter/custom' });
+  if (['auto','normal','paket','custom'].indexOf(basisHarga) === -1) return jsonResponse_({ ok: false, error: 'basis_harga harus: auto/normal/paket/custom' });
+  if (tglMulai && !/^\d{4}-\d{2}-\d{2}$/.test(tglMulai)) return jsonResponse_({ ok: false, error: 'tgl_mulai harus YYYY-MM-DD' });
+  if (tglSelesai && !/^\d{4}-\d{2}-\d{2}$/.test(tglSelesai)) return jsonResponse_({ ok: false, error: 'tgl_selesai harus YYYY-MM-DD' });
+
+  const v = validateProgramRules_(rules);
+  if (!v.ok) return jsonResponse_({ ok: false, error: v.error });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const newId = getNextProgramId_();
+    const now = nowJakarta_();
+    const targetIdsJson = JSON.stringify(targetIds);
+
+    const sh = getSheet_(CONFIG.SHEETS.PROGRAMS);
+    const newRow = sh.getLastRow() + 1;
+    sh.getRange(newRow, 1, 1, 21).setValues([[
+      newId, namaProgram, deskripsi,
+      tglMulai, tglSelesai, 'TRUE',
+      modeApproval, visibility, kombinasiMode, kalkulasiMode, priority,
+      targetType, targetIdsJson, basisHarga,
+      maxDiskon, maxUsagePerCustomer, maxUsageTotal, 0,
+      now, user.id_user, now
+    ]]);
+
+    const shR = getSheet_(CONFIG.SHEETS.PROGRAM_RULES);
+    const maxNum = getMaxProgramRuleNum_();
+    const rows = [];
+    rules.forEach(function(r, idx) {
+      const scopeIds = Array.isArray(r.scope_ids) ? r.scope_ids : [];
+      const parameter = r.parameter || {};
+      rows.push([
+        'KK22-PRL-' + pad4_(maxNum + idx + 1),
+        newId, Number(r.urutan) || (idx + 1),
+        String(r.rule_type || '').toLowerCase(),
+        String(r.scope || 'all').toLowerCase(),
+        JSON.stringify(scopeIds),
+        JSON.stringify(parameter),
+        now, now
+      ]);
+    });
+    if (rows.length > 0) {
+      const startRow = shR.getLastRow() + 1;
+      shR.getRange(startRow, 1, rows.length, 9).setValues(rows);
+    }
+
+    try {
+      logAktivitas_(user, 'createProgram',
+        'Program ' + newId + ' (' + namaProgram + '), ' + rules.length + ' rule, target=' + targetType);
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: { id_program: newId, nama_program: namaProgram, total_rules: rules.length, mode_approval: modeApproval }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleUpdateProgram_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idProgram = String(body.id_program || '').trim();
+  if (!idProgram) return jsonResponse_({ ok: false, error: 'id_program wajib diisi.' });
+
+  const header = getProgramById_(idProgram);
+  if (!header) return jsonResponse_({ ok: false, error: 'Program tidak ditemukan.' });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const sh = getSheet_(CONFIG.SHEETS.PROGRAMS);
+    const now = nowJakarta_();
+    const colMap = {
+      nama_program: 2, deskripsi: 3, tgl_mulai: 4, tgl_selesai: 5,
+      mode_approval: 7, visibility: 8, kombinasi_mode: 9, kalkulasi_mode: 10,
+      priority: 11, target_type: 12, target_ids: 13, basis_harga: 14,
+      max_diskon_per_order: 15, max_usage_per_customer: 16, max_usage_total: 17
+    };
+    const updated = [];
+    Object.keys(colMap).forEach(function(k) {
+      if (body[k] === undefined) return;
+      let v = body[k];
+      if (k === 'target_ids') v = JSON.stringify(Array.isArray(v) ? v : []);
+      sh.getRange(header.rowIndex, colMap[k]).setValue(v);
+      updated.push(k);
+    });
+    sh.getRange(header.rowIndex, 20).setValue(user.id_user);
+    sh.getRange(header.rowIndex, 21).setValue(now);
+
+    try {
+      logAktivitas_(user, 'updateProgram', 'Program ' + idProgram + ' diupdate: ' + updated.join(', '));
+    } catch (e) {}
+
+    return jsonResponse_({ ok: true, data: { id_program: idProgram, fields_updated: updated } });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleToggleProgramAktif_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idProgram = String(body.id_program || '').trim();
+  const aktifBaru = body.aktif;
+  if (!idProgram) return jsonResponse_({ ok: false, error: 'id_program wajib diisi.' });
+  if (typeof aktifBaru !== 'boolean') return jsonResponse_({ ok: false, error: 'aktif harus boolean.' });
+
+  const header = getProgramById_(idProgram);
+  if (!header) return jsonResponse_({ ok: false, error: 'Program tidak ditemukan.' });
+
+  const sh = getSheet_(CONFIG.SHEETS.PROGRAMS);
+  const now = nowJakarta_();
+  sh.getRange(header.rowIndex, 6).setValue(aktifBaru ? 'TRUE' : 'FALSE');
+  sh.getRange(header.rowIndex, 20).setValue(user.id_user);
+  sh.getRange(header.rowIndex, 21).setValue(now);
+
+  try {
+    logAktivitas_(user, 'toggleProgramAktif', 'Program ' + idProgram + ' aktif=' + aktifBaru);
+  } catch (e) {}
+
+  return jsonResponse_({ ok: true, data: { id_program: idProgram, aktif: aktifBaru } });
+}
+
+function handleSetProgramRules_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idProgram = String(body.id_program || '').trim();
+  const rules = Array.isArray(body.rules) ? body.rules : [];
+  if (!idProgram) return jsonResponse_({ ok: false, error: 'id_program wajib diisi.' });
+
+  const header = getProgramById_(idProgram);
+  if (!header) return jsonResponse_({ ok: false, error: 'Program tidak ditemukan.' });
+
+  const v = validateProgramRules_(rules);
+  if (!v.ok) return jsonResponse_({ ok: false, error: v.error });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shR = getSheet_(CONFIG.SHEETS.PROGRAM_RULES);
+    const lastR = shR.getLastRow();
+    if (lastR >= 2) {
+      const dataR = shR.getRange(2, 1, lastR - 1, 2).getValues();
+      const toDelete = [];
+      for (let i = 0; i < dataR.length; i++) {
+        if (String(dataR[i][1]) === idProgram) toDelete.push(i + 2);
+      }
+      toDelete.sort(function(a, b) { return b - a; });
+      toDelete.forEach(function(rowIdx) { shR.deleteRow(rowIdx); });
+    }
+
+    const now = nowJakarta_();
+    const maxNum = getMaxProgramRuleNum_();
+    const rows = [];
+    rules.forEach(function(r, idx) {
+      const scopeIds = Array.isArray(r.scope_ids) ? r.scope_ids : [];
+      const parameter = r.parameter || {};
+      rows.push([
+        'KK22-PRL-' + pad4_(maxNum + idx + 1),
+        idProgram, Number(r.urutan) || (idx + 1),
+        String(r.rule_type || '').toLowerCase(),
+        String(r.scope || 'all').toLowerCase(),
+        JSON.stringify(scopeIds),
+        JSON.stringify(parameter),
+        now, now
+      ]);
+    });
+    if (rows.length > 0) {
+      const startRow = shR.getLastRow() + 1;
+      shR.getRange(startRow, 1, rows.length, 9).setValues(rows);
+    }
+
+    try {
+      logAktivitas_(user, 'setProgramRules', 'Program ' + idProgram + ': ' + rules.length + ' rules di-set');
+    } catch (e) {}
+
+    return jsonResponse_({ ok: true, data: { id_program: idProgram, total_rules: rules.length } });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleDeleteProgram_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idProgram = String(body.id_program || '').trim();
+  if (!idProgram) return jsonResponse_({ ok: false, error: 'id_program wajib diisi.' });
+
+  const header = getProgramById_(idProgram);
+  if (!header) return jsonResponse_({ ok: false, error: 'Program tidak ditemukan.' });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shR = getSheet_(CONFIG.SHEETS.PROGRAM_RULES);
+    const lastR = shR.getLastRow();
+    if (lastR >= 2) {
+      const dataR = shR.getRange(2, 1, lastR - 1, 2).getValues();
+      const toDelete = [];
+      for (let i = 0; i < dataR.length; i++) {
+        if (String(dataR[i][1]) === idProgram) toDelete.push(i + 2);
+      }
+      toDelete.sort(function(a, b) { return b - a; });
+      toDelete.forEach(function(rowIdx) { shR.deleteRow(rowIdx); });
+    }
+
+    const sh = getSheet_(CONFIG.SHEETS.PROGRAMS);
+    sh.deleteRow(header.rowIndex);
+
+    try {
+      logAktivitas_(user, 'deleteProgram', 'Program ' + idProgram + ' (' + header.nama_program + ') dihapus');
+    } catch (e) {}
+
+    return jsonResponse_({ ok: true, data: { id_program: idProgram, nama_program: header.nama_program } });
   } finally {
     try { lock.releaseLock(); } catch (e) {}
   }

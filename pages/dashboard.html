@@ -84,11 +84,16 @@ function buildAdminNav() {
   adminHarga.href = 'admin-harga.html';
   adminHarga.textContent = 'Harga';
 
+  var adminProgram = document.createElement('a');
+  adminProgram.href = 'admin-program.html';
+  adminProgram.textContent = 'Program';
+
   var adminPanduan = document.createElement('a');
   adminPanduan.href = 'admin-panduan-harga.html';
-  adminPanduan.textContent = 'Program Harga';
+  adminPanduan.textContent = 'Panduan';
 
   navLinks.insertBefore(adminPanduan, dashboardLink);
+  navLinks.insertBefore(adminProgram, adminPanduan);
   navLinks.insertBefore(adminHarga, adminPanduan);
   navLinks.insertBefore(adminUsers, adminHarga);
   navLinks.insertBefore(adminPesanan, adminUsers);
@@ -103,7 +108,8 @@ function buildAdminTiles() {
     { href: 'admin-users.html',   icon: '&#128101;', label: 'Admin Users',   desc: 'Kelola akun user' },
     { href: 'admin-produk.html',  icon: '&#127849;', label: 'Admin Produk',  desc: 'Aktif/nonaktif produk' },
     { href: 'admin-harga.html',   icon: '&#128176;', label: 'Harga',         desc: 'Paket & custom' },
-    { href: 'admin-panduan-harga.html', icon: '&#128218;', label: 'Program Harga', desc: 'Panduan & roadmap' }
+    { href: 'admin-program.html',  icon: '&#127873;', label: 'Program',      desc: 'Promo & diskon aktif' },
+    { href: 'admin-panduan-harga.html', icon: '&#128218;', label: 'Panduan Harga', desc: 'Katalog model' }
   ];
 
   tiles.forEach(function(t) {

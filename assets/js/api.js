@@ -379,6 +379,51 @@ window.KK22_API = (function() {
     });
   }
 
+  // ========== ADMIN: PROGRAMS (F9.7) ==========
+  async function getPrograms() {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getPrograms', { token: token });
+  }
+
+  async function getProgramDetail(idProgram) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getProgramDetail', { token: token, id_program: idProgram });
+  }
+
+  async function createProgram(data) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const body = Object.assign({ token: token }, data || {});
+    return call('createProgram', body);
+  }
+
+  async function updateProgram(idProgram, data) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const body = Object.assign({ token: token, id_program: idProgram }, data || {});
+    return call('updateProgram', body);
+  }
+
+  async function toggleProgramAktif(idProgram, aktif) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('toggleProgramAktif', { token: token, id_program: idProgram, aktif: !!aktif });
+  }
+
+  async function setProgramRules(idProgram, rules) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('setProgramRules', { token: token, id_program: idProgram, rules: rules || [] });
+  }
+
+  async function deleteProgram(idProgram) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('deleteProgram', { token: token, id_program: idProgram });
+  }
+
   // ========== ADMIN: USER MANAGEMENT ==========
   async function createUser(noHp, pin, role, namaLengkap, idReseller) {
     const token = getToken();
@@ -420,6 +465,13 @@ window.KK22_API = (function() {
     lockItemPesanan: lockItemPesanan,
     unlockItemPesanan: unlockItemPesanan,
     toggleProdukAktif: toggleProdukAktif,
+    getPrograms: getPrograms,
+    getProgramDetail: getProgramDetail,
+    createProgram: createProgram,
+    updateProgram: updateProgram,
+    toggleProgramAktif: toggleProgramAktif,
+    setProgramRules: setProgramRules,
+    deleteProgram: deleteProgram,
     createUser: createUser,
     listUsers: listUsers,
     getPriceLists: getPriceLists,
