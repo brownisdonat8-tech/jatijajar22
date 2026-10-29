@@ -148,9 +148,10 @@
       <button class="modal-close" id="matrixClose" type="button">&times;</button>
     </div>
     <div class="modal-body" style="padding:12px 16px;">
-      <div class="search-bar" style="margin-bottom:10px;">
-        <input type="text" id="matrixSearch" placeholder="Cari produk..." autocomplete="off">
-        <button id="matrixBtnBulk" class="btn-secondary" style="width:auto;margin:0;padding:10px 14px;font-size:12px;">Paste Excel</button>
+      <div class="search-bar" style="margin-bottom:10px;flex-wrap:wrap;">
+        <input type="text" id="matrixSearch" placeholder="Cari produk..." autocomplete="off" style="flex:1 1 200px;">
+        <button id="matrixBtnDownload" class="btn-secondary" style="width:auto;margin:0;padding:10px 14px;font-size:12px;background:#17a2b8;color:white;">&#128229; Download Template</button>
+        <button id="matrixBtnBulk" class="btn-secondary" style="width:auto;margin:0;padding:10px 14px;font-size:12px;">&#128203; Paste / Upload</button>
       </div>
       <div style="font-size:12px;color:#888;margin-bottom:8px;" id="matrixCount">-</div>
       <div id="matrixWrap" style="max-height:55vh;overflow-y:auto;"></div>
@@ -161,21 +162,36 @@
   </div>
 </div>
 
-<!-- ============ MODAL: Bulk Paste Excel ============ -->
+<!-- ============ MODAL: Bulk Paste / Upload ============ -->
 <div id="modalBulk" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:720px;">
     <div class="modal-header">
-      <h2>Paste Harga dari Excel</h2>
+      <h2>Paste / Upload Harga Paket</h2>
       <button class="modal-close" id="bulkClose" type="button">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:12px;color:#666;margin-bottom:10px;">Paste dari Excel dengan format: <b>nama_produk [TAB] harga</b>. Baris tanpa produk valid akan dilewati.</p>
-      <textarea id="bulkText" placeholder="Bolu Ketan Hitam Lumer&#9;20000&#10;Cheese Clouds Lembang&#9;45000" style="min-height:150px;font-family:monospace;font-size:12px;width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;"></textarea>
+      <div class="tabs" id="bulkTabs" style="margin-bottom:12px;">
+        <button class="active" type="button" data-bulk-tab="paste">&#128203; Paste dari Excel</button>
+        <button type="button" data-bulk-tab="upload">&#128193; Upload File CSV</button>
+      </div>
+
+      <div id="bulkTabPaste">
+        <p style="font-size:12px;color:#666;margin-bottom:10px;">Paste dari Excel (3 kolom: <b>Nama Produk</b> | Harga Normal | <b>Harga Paket</b>). Yang dibaca: kolom 1 (nama) + kolom 3 (harga paket). Kolom harga normal diabaikan.</p>
+        <textarea id="bulkText" placeholder="Bolu Ketan Hitam Lumer&#9;25000&#9;18000&#10;Cheese Clouds Lembang&#9;50000&#9;40000" style="min-height:150px;font-family:monospace;font-size:12px;width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;"></textarea>
+      </div>
+
+      <div id="bulkTabUpload" style="display:none;">
+        <p style="font-size:12px;color:#666;margin-bottom:10px;">Upload file CSV hasil edit dari template. Yang dibaca: kolom 1 (nama) + kolom 3 (harga paket). Kolom harga normal diabaikan.</p>
+        <input type="file" id="bulkFile" accept=".csv,.txt,.tsv" style="width:100%;padding:10px;border:1px dashed #ddd;border-radius:8px;background:#fafbfd;cursor:pointer;">
+        <div id="bulkFileInfo" style="font-size:12px;color:#666;margin-top:8px;"></div>
+      </div>
+
+      <div id="bulkPreview" style="margin-top:12px;padding:10px 12px;background:#f7f8fa;border-radius:8px;font-size:12px;color:#333;display:none;"></div>
       <div id="bulkAlert" class="alert"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" id="bulkCancel" type="button">Batal</button>
-      <button class="btn-primary-full" id="bulkSubmit" type="button" style="flex:1;margin:0;">Simpan</button>
+      <button class="btn-primary-full" id="bulkSubmit" type="button" style="flex:1;margin:0;" disabled>Simpan</button>
     </div>
   </div>
 </div>
@@ -529,7 +545,7 @@ async function loadMatrix() {
   }
   currentMatrixItems = r.data.items || [];
   document.getElementById('matrixTitle').textContent = r.data.header.nama_paket;
-  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' · ' + currentMatrixItems.length + ' produk';
+  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' Ã‚Â· ' + currentMatrixItems.length + ' produk';
   renderMatrix();
 }
 
@@ -588,30 +604,226 @@ document.getElementById('matrixSearch').addEventListener('input', function() {
 document.getElementById('matrixClose').addEventListener('click', function() { document.getElementById('modalMatrix').style.display = 'none'; });
 document.getElementById('matrixClose2').addEventListener('click', function() { document.getElementById('modalMatrix').style.display = 'none'; });
 
+// ============ DOWNLOAD TEMPLATE CSV ============
+document.getElementById('matrixBtnDownload').addEventListener('click', function() {
+  if (!currentMatrixPL || !currentMatrixItems.length) {
+    showAlert('Tidak ada produk untuk diunduh.', 'error');
+    return;
+  }
+  var plInfo = priceLists.find(function(x) { return x.id_price_list === currentMatrixPL; });
+  var plNama = plInfo ? plInfo.nama_paket : currentMatrixPL;
+
+  // CSV format: quote values, escape internal quotes, delimiter ','
+  function csvCell(v) {
+    var s = String(v == null ? '' : v);
+    if (s.indexOf('"') !== -1 || s.indexOf(',') !== -1 || s.indexOf('\n') !== -1 || s.indexOf('\r') !== -1) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  var lines = [];
+  lines.push(csvCell('Nama Produk') + ',' + csvCell('Harga Normal') + ',' + csvCell('Harga Paket'));
+  currentMatrixItems.forEach(function(it) {
+    var hargaPaket = it.harga_paket > 0 ? it.harga_paket : '';
+    lines.push(csvCell(it.nama_produk) + ',' + csvCell(it.harga_default) + ',' + csvCell(hargaPaket));
+  });
+
+  var csvContent = '\uFEFF' + lines.join('\r\n'); // BOM for Excel UTF-8
+  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  var fileName = 'template-paket-' + currentMatrixPL.replace(/[^a-zA-Z0-9-]/g, '_') + '.csv';
+
+  if (navigator.msSaveBlob) {
+    navigator.msSaveBlob(blob, fileName);
+  } else {
+    var link = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  showAlert('Template diunduh: ' + fileName + ' (' + currentMatrixItems.length + ' produk)', 'success');
+});
+
+// ============ BULK PASTE / UPLOAD (F9.1b-9) ============
+var bulkCurrentItems = [];
+
 document.getElementById('matrixBtnBulk').addEventListener('click', function() {
   currentBulkPL = currentMatrixPL;
+  bulkCurrentItems = [];
   document.getElementById('bulkText').value = '';
+  document.getElementById('bulkFile').value = '';
+  document.getElementById('bulkFileInfo').textContent = '';
+  document.getElementById('bulkPreview').style.display = 'none';
+  document.getElementById('bulkPreview').innerHTML = '';
   document.getElementById('bulkAlert').className = 'alert';
+  document.getElementById('bulkSubmit').disabled = true;
+  document.getElementById('bulkSubmit').textContent = 'Simpan';
+  // Reset active tab ke Paste
+  document.querySelectorAll('#bulkTabs button').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelector('#bulkTabs button[data-bulk-tab="paste"]').classList.add('active');
+  document.getElementById('bulkTabPaste').style.display = 'block';
+  document.getElementById('bulkTabUpload').style.display = 'none';
   document.getElementById('modalBulk').style.display = 'flex';
 });
 
-// ============ BULK PASTE ============
+// Tab switching
+document.querySelectorAll('#bulkTabs button').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#bulkTabs button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var tab = btn.dataset.bulkTab;
+    document.getElementById('bulkTabPaste').style.display = tab === 'paste' ? 'block' : 'none';
+    document.getElementById('bulkTabUpload').style.display = tab === 'upload' ? 'block' : 'none';
+  });
+});
+
 document.getElementById('bulkClose').addEventListener('click', function() { document.getElementById('modalBulk').style.display = 'none'; });
 document.getElementById('bulkCancel').addEventListener('click', function() { document.getElementById('modalBulk').style.display = 'none'; });
 
+// Parser CSV robust (handle quote, escape, auto-delimiter, header detection)
+function parseBulkTabularText(text) {
+  if (!text) return { items: [], skipped: 0 };
+  var normalized = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var lines = normalized.split('\n');
+
+  // Auto-detect delimiter from first non-empty line
+  var firstLine = '';
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].trim()) { firstLine = lines[i]; break; }
+  }
+  var delim = ',';
+  if (firstLine.indexOf('\t') !== -1) delim = '\t';
+  else if ((firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length) delim = ';';
+
+  function parseLine(line) {
+    var cols = [];
+    var cur = '';
+    var inQ = false;
+    for (var j = 0; j < line.length; j++) {
+      var c = line[j];
+      if (inQ) {
+        if (c === '"') {
+          if (line[j+1] === '"') { cur += '"'; j++; }
+          else inQ = false;
+        } else cur += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === delim) { cols.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    cols.push(cur);
+    return cols;
+  }
+
+  var items = [];
+  var skipped = 0;
+  var headerChecked = false;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line.trim()) continue;
+    var cols = parseLine(line);
+
+    // Header detection: baris pertama mengandung 'nama' atau 'product'
+    if (!headerChecked) {
+      headerChecked = true;
+      var c0 = String(cols[0] || '').toLowerCase().trim();
+      if (c0.indexOf('nama') !== -1 || c0.indexOf('product') !== -1) {
+        continue; // skip header
+      }
+    }
+
+    if (cols.length < 2) { skipped++; continue; }
+    var nama = String(cols[0] || '').trim();
+    if (!nama) { skipped++; continue; }
+
+    // 3+ kolom: pakai col[2] (harga paket), ignore col[1] (harga normal)
+    // 2 kolom: pakai col[1]
+    var hargaStr = cols.length >= 3 ? String(cols[2] || '') : String(cols[1] || '');
+    hargaStr = hargaStr.trim();
+    if (!hargaStr) { skipped++; continue; }
+    var harga = Number(hargaStr.replace(/[^0-9]/g, ''));
+    if (!harga || harga <= 0) { skipped++; continue; }
+
+    items.push({ nama_produk: nama, harga: harga });
+  }
+
+  return { items: items, skipped: skipped };
+}
+
+function updateBulkPreview(parsed) {
+  var prev = document.getElementById('bulkPreview');
+  var btn = document.getElementById('bulkSubmit');
+  if (!parsed || parsed.items.length === 0) {
+    prev.style.display = 'block';
+    prev.innerHTML = '<b style="color:#dc3545;">Tidak ada item valid.</b> Periksa format: kolom 1 = nama produk, kolom 3 = harga paket.';
+    btn.disabled = true;
+    return;
+  }
+  bulkCurrentItems = parsed.items;
+  prev.style.display = 'block';
+  prev.innerHTML =
+    '<b style="color:#155724;">&#10004; ' + parsed.items.length + ' produk valid</b>' +
+    (parsed.skipped > 0 ? ' &middot; <span style="color:#dc3545;">' + parsed.skipped + ' baris dilewati</span>' : '') +
+    '<div style="margin-top:6px;font-size:11px;color:#666;">Contoh 3 pertama: ' +
+    parsed.items.slice(0, 3).map(function(x) { return esc(x.nama_produk) + ' (' + rp(x.harga) + ')'; }).join(' &middot; ') +
+    '</div>';
+  btn.disabled = false;
+  btn.textContent = 'Simpan ' + parsed.items.length + ' Harga';
+}
+
+document.getElementById('bulkText').addEventListener('input', function() {
+  var parsed = parseBulkTabularText(this.value);
+  updateBulkPreview(parsed);
+});
+
+document.getElementById('bulkFile').addEventListener('change', function(e) {
+  var file = e.target.files && e.target.files[0];
+  var info = document.getElementById('bulkFileInfo');
+  if (!file) {
+    info.textContent = '';
+    bulkCurrentItems = [];
+    updateBulkPreview({ items: [], skipped: 0 });
+    return;
+  }
+  info.innerHTML = 'Membaca file <b>' + esc(file.name) + '</b> (' + Math.round(file.size / 1024) + ' KB)...';
+  var reader = new FileReader();
+  reader.onload = function(evt) {
+    var text = String(evt.target.result || '');
+    // Strip BOM jika ada
+    if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
+    var parsed = parseBulkTabularText(text);
+    info.innerHTML = 'File: <b>' + esc(file.name) + '</b> &middot; ' + parsed.items.length + ' item valid, ' + parsed.skipped + ' dilewati';
+    updateBulkPreview(parsed);
+  };
+  reader.onerror = function() {
+    info.innerHTML = '<span style="color:#dc3545;">Gagal membaca file.</span>';
+    updateBulkPreview({ items: [], skipped: 0 });
+  };
+  reader.readAsText(file, 'UTF-8');
+});
+
 document.getElementById('bulkSubmit').addEventListener('click', async function() {
-  var txt = document.getElementById('bulkText').value.trim();
-  if (!txt) { showBulkAlert('Paste data dulu.'); return; }
-  var items = parseExcelText(txt);
-  if (items.length === 0) { showBulkAlert('Tidak ada item valid. Format: nama_produk TAB harga.'); return; }
+  if (bulkCurrentItems.length === 0) {
+    showBulkAlert('Tidak ada item untuk disimpan.');
+    return;
+  }
   var btn = this;
-  btn.disabled = true; var orig = btn.textContent;
+  btn.disabled = true;
+  var orig = btn.textContent;
   btn.textContent = 'Menyimpan...';
-  var r = await KK22_API.bulkSetPriceListItems(currentBulkPL, items);
-  btn.disabled = false; btn.textContent = orig;
-  if (!r.ok) { showBulkAlert(r.error || 'Gagal simpan.'); return; }
+  var r = await KK22_API.bulkSetPriceListItems(currentBulkPL, bulkCurrentItems);
+  btn.disabled = false;
+  btn.textContent = orig;
+  if (!r.ok) { showBulkAlert(r.error || 'Gagal simpan.'); btn.disabled = false; return; }
   document.getElementById('modalBulk').style.display = 'none';
-  showAlert('Bulk: updated=' + r.data.updated + ', created=' + r.data.created, 'success');
+  showAlert('Bulk simpan sukses: ' + r.data.updated + ' updated, ' + r.data.created + ' created.', 'success');
   await loadMatrix();
 });
 
