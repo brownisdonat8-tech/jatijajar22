@@ -256,6 +256,35 @@ window.KK22_API = (function() {
     return call('unlockItemsBulk', body);
   }
 
+  // ========== ADMIN: HARGA KHUSUS (F9.1) ==========
+  async function getHargaKhusus(idReseller) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getHargaKhusus', { token: token, id_reseller: idReseller });
+  }
+
+  async function setHargaKhusus(idReseller, namaProduk, hargaKhusus, catatan) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('setHargaKhusus', {
+      token: token,
+      id_reseller: idReseller,
+      nama_produk: namaProduk,
+      harga_khusus: hargaKhusus,
+      catatan: catatan || ''
+    });
+  }
+
+  async function deleteHargaKhusus(idReseller, namaProduk) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('deleteHargaKhusus', {
+      token: token,
+      id_reseller: idReseller,
+      nama_produk: namaProduk
+    });
+  }
+
   // ========== ADMIN: USER MANAGEMENT ==========
   async function createUser(noHp, pin, role, namaLengkap, idReseller) {
     const token = getToken();
@@ -299,6 +328,9 @@ window.KK22_API = (function() {
     toggleProdukAktif: toggleProdukAktif,
     createUser: createUser,
     listUsers: listUsers,
+    getHargaKhusus: getHargaKhusus,
+    setHargaKhusus: setHargaKhusus,
+    deleteHargaKhusus: deleteHargaKhusus,
     getProdukInPOs: getProdukInPOs,
     lockItemsBulk: lockItemsBulk,
     unlockItemsBulk: unlockItemsBulk

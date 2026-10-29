@@ -77,6 +77,12 @@ function setupAllSheets() {
     'key', 'value', 'keterangan', 'tgl_update'
   ]);
 
+  // 10. RESELLER_HARGA - Harga khusus per reseller (F9.1)
+  createSheet_(ss, CONFIG.SHEETS.RESELLER_HARGA, [
+    'id_reseller', 'nama_produk', 'harga_khusus',
+    'catatan', 'tgl_dibuat', 'diupdate_oleh', 'tgl_update_terakhir'
+  ]);
+
   // Hapus Sheet1 default kalau ada
   const sheet1 = ss.getSheetByName('Sheet1');
   if (sheet1 && ss.getSheets().length > 1) {
@@ -138,6 +144,24 @@ function seedJurnalMapping_(ss) {
  * Test koneksi ke Spreadsheet
  * Jalankan ini dulu untuk verifikasi Config benar
  */
+// ============================================================
+// F9.1 - MANUAL: Bikin sheet RESELLER_HARGA (jalankan sekali dari editor)
+// ============================================================
+function addResellerHargaSheet() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  const name = CONFIG.SHEETS.RESELLER_HARGA;
+  const existing = ss.getSheetByName(name);
+  if (existing) {
+    Logger.log('Sheet ' + name + ' sudah ada. Skip.');
+    return;
+  }
+  createSheet_(ss, name, [
+    'id_reseller', 'nama_produk', 'harga_khusus',
+    'catatan', 'tgl_dibuat', 'diupdate_oleh', 'tgl_update_terakhir'
+  ]);
+  Logger.log('Sheet ' + name + ' berhasil dibuat dengan 7 kolom header.');
+}
+
 function testConnection() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   Logger.log('Terhubung ke : ' + ss.getName());

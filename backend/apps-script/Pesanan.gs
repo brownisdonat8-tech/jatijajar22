@@ -440,7 +440,7 @@ function handleGetDetailPesanan_(body) {
 }
 
 // ============================================================
-// UPDATE PESANAN ITEMS (F7.5 — edit PO selama masih pending/partial_locked)
+// UPDATE PESANAN ITEMS (F7.5 â€” edit PO selama masih pending/partial_locked)
 // Reseller bisa edit PO sendiri; admin/owner bisa edit semua.
 // Locked items: readonly (tidak boleh diubah).
 // items[] = FINAL list item PENDING saja (locked tidak dikirim, tetap ada).
@@ -658,6 +658,206 @@ function validasiItemsForUpdate_(rawItems) {
     });
   }
   return { ok: true, items: items };
+}
+
+// ============================================================
+// F9.1 — HARGA KHUSUS PER RESELLER
+// ============================================================
+
+function getHargaOverrideForReseller_(idReseller) {
+  if (!idReseller) return {};
+  const cacheKey = 'harga_override_' + idReseller;
+  const cached = cacheGet_(cacheKey);
+  if (cached && typeof cached === 'object') return cached;
+
+  const sh = getSheet_(CONFIG.SHEETS.RESELLER_HARGA);
+  if (!sh) return {};
+  const last = sh.getLastRow();
+  if (last < 2) {
+    cachePut_(cacheKey, {}, 300);
+    return {};
+  }
+
+  const data = sh.getRange(2, 1, last - 1, 7).getValues();
+  const map = {};
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    if (String(r[0]) !== String(idReseller)) continue;
+    const nama = String(r[1] || '').trim();
+    const harga = Number(r[2]) || 0;
+    if (!nama || harga <= 0) continue;
+    map[nama.toLowerCase()] = {
+      harga_khusus: harga,
+      catatan: String(r[3] || '')
+    };
+  }
+  cachePut_(cacheKey, map, 300);
+  return map;
+}
+
+function handleGetHargaKhusus_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idReseller = String(body.id_reseller || '').trim();
+  if (!idReseller) return jsonResponse_({ ok: false, error: 'id_reseller wajib diisi.' });
+
+  const sh = getSheet_(CONFIG.SHEETS.RESELLER_HARGA);
+  if (!sh) return jsonResponse_({ ok: false, error: 'Sheet RESELLER_HARGA belum ada.' });
+  const last = sh.getLastRow();
+  const items = [];
+  if (last >= 2) {
+    const data = sh.getRange(2, 1, last - 1, 7).getValues();
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      if (String(r[0]) !== idReseller) continue;
+      items.push({
+        id_reseller: String(r[0]),
+        nama_produk: String(r[1]),
+        harga_khusus: Number(r[2]) || 0,
+        catatan: String(r[3] || ''),
+        tgl_dibuat: String(r[4] || ''),
+        diupdate_oleh: String(r[5] || ''),
+        tgl_update_terakhir: String(r[6] || '')
+      });
+    }
+  }
+  items.sort(function(a, b) { return a.nama_produk.localeCompare(b.nama_produk); });
+  return jsonResponse_({ ok: true, data: { total: items.length, items: items } });
+}
+
+function handleSetHargaKhusus_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idReseller = String(body.id_reseller || '').trim();
+  const namaProduk = String(body.nama_produk || '').trim();
+  const hargaKhusus = Number(body.harga_khusus);
+  const catatan = String(body.catatan || '').trim();
+
+  if (!idReseller) return jsonResponse_({ ok: false, error: 'id_reseller wajib diisi.' });
+  if (!namaProduk) return jsonResponse_({ ok: false, error: 'nama_produk wajib diisi.' });
+  if (!hargaKhusus || hargaKhusus <= 0) return jsonResponse_({ ok: false, error: 'harga_khusus harus angka > 0.' });
+
+  const res = findResellerById_(idReseller);
+  if (!res) return jsonResponse_({ ok: false, error: 'Reseller tidak ditemukan: ' + idReseller });
+
+  const shP = getSheet_(CONFIG.SHEETS.PRODUK);
+  const lastP = shP.getLastRow();
+  let produkFound = null;
+  if (lastP >= 2) {
+    const dataP = shP.getRange(2, 1, lastP - 1, 20).getValues();
+    for (let i = 0; i < dataP.length; i++) {
+      if (String(dataP[i][0]).toLowerCase() === namaProduk.toLowerCase()) {
+        produkFound = {
+          nama: String(dataP[i][0]),
+          harga_default: Number(dataP[i][9]) || 0
+        };
+        break;
+      }
+    }
+  }
+  if (!produkFound) return jsonResponse_({ ok: false, error: 'Produk tidak ditemukan: ' + namaProduk });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const sh = getSheet_(CONFIG.SHEETS.RESELLER_HARGA);
+    if (!sh) return jsonResponse_({ ok: false, error: 'Sheet RESELLER_HARGA belum ada.' });
+    const last = sh.getLastRow();
+    let foundRowIdx = -1;
+    if (last >= 2) {
+      const data = sh.getRange(2, 1, last - 1, 7).getValues();
+      for (let i = 0; i < data.length; i++) {
+        if (String(data[i][0]) === idReseller &&
+            String(data[i][1]).toLowerCase() === namaProduk.toLowerCase()) {
+          foundRowIdx = i + 2;
+          break;
+        }
+      }
+    }
+
+    const now = nowJakarta_();
+    if (foundRowIdx > 0) {
+      sh.getRange(foundRowIdx, 3).setValue(hargaKhusus);
+      sh.getRange(foundRowIdx, 4).setValue(catatan);
+      sh.getRange(foundRowIdx, 6).setValue(user.id_user);
+      sh.getRange(foundRowIdx, 7).setValue(now);
+    } else {
+      const newRow = sh.getLastRow() + 1;
+      sh.getRange(newRow, 1, 1, 7).setValues([[
+        idReseller, namaProduk, hargaKhusus, catatan, now, user.id_user, now
+      ]]);
+    }
+
+    cacheInvalidate_(['harga_override_' + idReseller]);
+
+    try {
+      logAktivitas_(user, 'setHargaKhusus',
+        'Reseller ' + idReseller + ', produk ' + namaProduk +
+        ', harga=' + hargaKhusus + ' (default=' + produkFound.harga_default + ')');
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: {
+        mode: foundRowIdx > 0 ? 'updated' : 'created',
+        id_reseller: idReseller,
+        nama_produk: produkFound.nama,
+        harga_khusus: hargaKhusus,
+        harga_default: produkFound.harga_default
+      }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleDeleteHargaKhusus_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idReseller = String(body.id_reseller || '').trim();
+  const namaProduk = String(body.nama_produk || '').trim();
+  if (!idReseller) return jsonResponse_({ ok: false, error: 'id_reseller wajib diisi.' });
+  if (!namaProduk) return jsonResponse_({ ok: false, error: 'nama_produk wajib diisi.' });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const sh = getSheet_(CONFIG.SHEETS.RESELLER_HARGA);
+    if (!sh) return jsonResponse_({ ok: false, error: 'Sheet RESELLER_HARGA belum ada.' });
+    const last = sh.getLastRow();
+    if (last < 2) return jsonResponse_({ ok: false, error: 'Belum ada data harga khusus.' });
+
+    const data = sh.getRange(2, 1, last - 1, 7).getValues();
+    let foundRowIdx = -1;
+    for (let i = 0; i < data.length; i++) {
+      if (String(data[i][0]) === idReseller &&
+          String(data[i][1]).toLowerCase() === namaProduk.toLowerCase()) {
+        foundRowIdx = i + 2;
+        break;
+      }
+    }
+    if (foundRowIdx === -1) return jsonResponse_({ ok: false, error: 'Harga khusus tidak ditemukan.' });
+
+    sh.deleteRow(foundRowIdx);
+    cacheInvalidate_(['harga_override_' + idReseller]);
+
+    try {
+      logAktivitas_(user, 'deleteHargaKhusus',
+        'Reseller ' + idReseller + ', produk ' + namaProduk);
+    } catch (e) {}
+
+    return jsonResponse_({ ok: true, data: { id_reseller: idReseller, nama_produk: namaProduk } });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
 }
 
 // ============================================================

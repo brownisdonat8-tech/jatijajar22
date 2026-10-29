@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harga Khusus - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="admin-pesanan.html">Admin Pesanan</a>
+      <a href="admin-users.html">Admin Users</a>
+      <a href="admin-produk.html">Admin Produk</a>
+      <a href="admin-harga.html" class="active">Harga Khusus</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Harga Khusus per Reseller</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:16px;">Override harga default untuk reseller tertentu. Hanya berlaku untuk reseller yang dipilih.</p>
+
+  <div class="form-row" style="margin-bottom:16px;">
+    <label for="resellerSelect">Pilih Reseller <span style="color:#dc3545">*</span></label>
+    <div class="autocomplete-wrap">
+      <input type="text" id="resellerInput" placeholder="Ketik nama reseller..." autocomplete="off">
+      <div class="autocomplete-list" id="resellerList" style="display:none;"></div>
+    </div>
+    <div class="hint" id="selectedInfo" style="display:none;"></div>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <div id="contentWrap" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <h2 style="font-size:15px;color:#333;margin:0;">Daftar Harga Khusus</h2>
+      <button id="btnAddHarga" class="btn-primary-full" style="width:auto;margin:0;padding:10px 16px;font-size:13px;">+ Tambah Harga Khusus</button>
+    </div>
+
+    <div id="listWrap">
+      <div class="empty-state"><span class="spinner"></span> Memuat...</div>
+    </div>
+  </div>
+
+  <div id="emptyReseller" class="empty-state">
+    <div class="icon">&#128176;</div>
+    Pilih reseller di atas untuk mulai atur harga khusus.
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<!-- MODAL: Tambah/Edit Harga Khusus -->
+<div id="modalHarga" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalTitle">Tambah Harga Khusus</h2>
+      <button class="modal-close" id="modalClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row" id="rowProdukPicker">
+        <label for="produkInput">Produk <span style="color:#dc3545">*</span></label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="produkInput" placeholder="Ketik nama produk..." autocomplete="off">
+          <div class="autocomplete-list" id="produkList" style="display:none;"></div>
+        </div>
+        <div class="hint" id="produkInfo" style="display:none;"></div>
+      </div>
+
+      <div class="form-row" id="rowProdukLocked" style="display:none;">
+        <label>Produk</label>
+        <input type="text" id="produkDisplay" readonly style="background:#f7f8fa;cursor:not-allowed;">
+      </div>
+
+      <div class="form-row">
+        <label for="hargaInput">Harga Khusus (Rp) <span style="color:#dc3545">*</span></label>
+        <input type="number" id="hargaInput" placeholder="cth: 12500" min="1" inputmode="numeric">
+        <div class="hint" id="hargaHint"></div>
+      </div>
+
+      <div class="form-row">
+        <label for="catatanInput">Catatan (opsional)</label>
+        <textarea id="catatanInput" placeholder="cth: diskon cash bulk min 20 pcs" maxlength="150"></textarea>
+      </div>
+
+      <div id="modalAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modalCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="modalSubmit" type="button" style="flex:1;margin:0;">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function rp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+function showAlert(msg, type) {
+  var b = document.getElementById('alertBox');
+  b.className = 'alert alert-' + (type || 'info') + ' show';
+  b.textContent = msg;
+  clearTimeout(b._t);
+  b._t = setTimeout(function() { b.className = 'alert'; }, 3500);
+}
+function showModalAlert(msg) {
+  var b = document.getElementById('modalAlert');
+  b.className = 'alert alert-error show';
+  b.textContent = msg;
+}
+
+var currentUser = null;
+var selectedReseller = null; // { id, nama }
+var allResellers = [];
+var allProduk = [];
+var hargaList = [];
+var modalMode = 'create'; // 'create' | 'edit'
+var modalEditing = null; // { nama_produk, harga_khusus }
+
+// ============ RESELLER AUTOCOMPLETE ============
+function renderResellerList(q) {
+  var list = document.getElementById('resellerList');
+  var ql = String(q || '').trim().toLowerCase();
+  var filtered = !ql ? allResellers.slice(0, 50) : allResellers.filter(function(x) {
+    return String(x[1] || '').toLowerCase().indexOf(ql) !== -1;
+  }).slice(0, 50);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Tidak ada reseller cocok</div>';
+  } else {
+    var html = '';
+    filtered.forEach(function(x) {
+      html += '<div class="item" data-id="' + esc(x[0]) + '" data-nama="' + esc(x[1]) + '">';
+      html += '<span class="name">' + esc(x[1]) + '</span>';
+      html += '<span class="id">' + esc(x[0]) + '</span>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+    list.querySelectorAll('.item').forEach(function(el) {
+      el.addEventListener('click', function() {
+        selectReseller(el.dataset.id, el.dataset.nama);
+      });
+    });
+  }
+  list.style.display = 'block';
+}
+
+function selectReseller(id, nama) {
+  selectedReseller = { id: id, nama: nama };
+  document.getElementById('resellerInput').value = nama;
+  document.getElementById('resellerList').style.display = 'none';
+  var info = document.getElementById('selectedInfo');
+  info.style.display = 'block';
+  info.innerHTML = 'Reseller dipilih: <b>' + esc(nama) + '</b> (' + esc(id) + ')';
+  document.getElementById('emptyReseller').style.display = 'none';
+  document.getElementById('contentWrap').style.display = 'block';
+  loadHargaList();
+}
+
+// ============ HARGA LIST ============
+async function loadHargaList() {
+  if (!selectedReseller) return;
+  document.getElementById('listWrap').innerHTML = '<div class="empty-state"><span class="spinner"></span> Memuat...</div>';
+  var r = await KK22_API.getHargaKhusus(selectedReseller.id);
+  if (!r.ok) {
+    document.getElementById('listWrap').innerHTML = '<div class="empty-state">Gagal: ' + esc(r.error) + '</div>';
+    return;
+  }
+  hargaList = r.data.items || [];
+  renderHargaList();
+}
+
+function renderHargaList() {
+  var wrap = document.getElementById('listWrap');
+  if (hargaList.length === 0) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:30px 20px;"><div class="icon">&#128176;</div>Belum ada harga khusus untuk reseller ini.<br><span style="font-size:12px;">Klik "+ Tambah Harga Khusus" untuk mulai.</span></div>';
+    return;
+  }
+  var html = '<div class="harga-list">';
+  hargaList.forEach(function(it) {
+    html += '<div class="harga-card">';
+    html += '<div class="harga-info">';
+    html += '<div class="harga-nama">' + esc(it.nama_produk) + '</div>';
+    if (it.catatan) html += '<div class="harga-catatan">' + esc(it.catatan) + '</div>';
+    html += '</div>';
+    html += '<div class="harga-value">' + rp(it.harga_khusus) + '</div>';
+    html += '<div class="harga-actions">';
+    html += '<button class="btn-edit-harga" data-nama="' + esc(it.nama_produk) + '" data-harga="' + it.harga_khusus + '" data-catatan="' + esc(it.catatan) + '">&#9998;</button>';
+    html += '<button class="btn-del-harga" data-nama="' + esc(it.nama_produk) + '">&#128465;</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.btn-edit-harga').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      openModalEdit(btn.dataset.nama, Number(btn.dataset.harga), btn.dataset.catatan);
+    });
+  });
+  wrap.querySelectorAll('.btn-del-harga').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var nama = btn.dataset.nama;
+      if (!confirm('Hapus harga khusus "' + nama + '"?\n\nHarga default akan kembali dipakai untuk produk ini.')) return;
+      btn.disabled = true;
+      var r = await KK22_API.deleteHargaKhusus(selectedReseller.id, nama);
+      btn.disabled = false;
+      if (!r.ok) { showAlert(r.error || 'Gagal hapus.', 'error'); return; }
+      showAlert('Harga khusus dihapus.', 'success');
+      await loadHargaList();
+    });
+  });
+}
+
+// ============ MODAL TAMBAH/EDIT ============
+function openModalCreate() {
+  modalMode = 'create';
+  modalEditing = null;
+  document.getElementById('modalTitle').textContent = 'Tambah Harga Khusus';
+  document.getElementById('rowProdukPicker').style.display = '';
+  document.getElementById('rowProdukLocked').style.display = 'none';
+  document.getElementById('produkInput').value = '';
+  document.getElementById('produkInfo').style.display = 'none';
+  document.getElementById('hargaInput').value = '';
+  document.getElementById('hargaHint').textContent = '';
+  document.getElementById('catatanInput').value = '';
+  document.getElementById('modalAlert').className = 'alert';
+  document.getElementById('modalHarga').style.display = 'flex';
+  setTimeout(function() { document.getElementById('produkInput').focus(); }, 100);
+}
+
+function openModalEdit(nama, harga, catatan) {
+  modalMode = 'edit';
+  modalEditing = { nama_produk: nama, harga_khusus: harga };
+  document.getElementById('modalTitle').textContent = 'Edit Harga Khusus';
+  document.getElementById('rowProdukPicker').style.display = 'none';
+  document.getElementById('rowProdukLocked').style.display = '';
+  document.getElementById('produkDisplay').value = nama;
+  document.getElementById('hargaInput').value = harga;
+  document.getElementById('hargaHint').textContent = '';
+  document.getElementById('catatanInput').value = catatan || '';
+  document.getElementById('modalAlert').className = 'alert';
+  document.getElementById('modalHarga').style.display = 'flex';
+  setTimeout(function() { document.getElementById('hargaInput').focus(); }, 100);
+}
+
+function closeModal() {
+  document.getElementById('modalHarga').style.display = 'none';
+}
+
+function renderProdukPickerList(q) {
+  var list = document.getElementById('produkList');
+  var ql = String(q || '').trim().toLowerCase();
+  var existingNames = {};
+  hargaList.forEach(function(it) { existingNames[String(it.nama_produk).toLowerCase()] = true; });
+  var filtered = allProduk.filter(function(p) {
+    if (!p.aktif) return false;
+    if (existingNames[String(p.nama_produk).toLowerCase()]) return false; // exclude yang sudah ada
+    if (ql && String(p.nama_produk || '').toLowerCase().indexOf(ql) === -1) return false;
+    return true;
+  }).slice(0, 50);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Tidak ada produk cocok (atau sudah punya harga khusus)</div>';
+  } else {
+    var html = '';
+    filtered.forEach(function(p) {
+      html += '<div class="item" data-nama="' + esc(p.nama_produk) + '" data-harga="' + p.harga_jual + '">';
+      html += '<span class="name">' + esc(p.nama_produk) + '</span>';
+      html += '<span class="id">' + rp(p.harga_jual) + '</span>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+    list.querySelectorAll('.item').forEach(function(el) {
+      el.addEventListener('click', function() {
+        document.getElementById('produkInput').value = el.dataset.nama;
+        document.getElementById('produkList').style.display = 'none';
+        var harga = Number(el.dataset.harga) || 0;
+        var info = document.getElementById('produkInfo');
+        info.style.display = 'block';
+        info.innerHTML = 'Harga default: <b>' + rp(harga) + '</b>';
+        document.getElementById('hargaHint').textContent = 'Harga default: ' + rp(harga);
+      });
+    });
+  }
+  list.style.display = 'block';
+}
+
+// ============ EVENT HANDLERS ============
+document.getElementById('resellerInput').addEventListener('focus', function() {
+  renderResellerList(this.value);
+});
+document.getElementById('resellerInput').addEventListener('click', function() {
+  renderResellerList(this.value);
+});
+document.getElementById('resellerInput').addEventListener('input', function() {
+  renderResellerList(this.value);
+});
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#resellerInput') && !e.target.closest('#resellerList')) {
+    document.getElementById('resellerList').style.display = 'none';
+  }
+  if (!e.target.closest('#produkInput') && !e.target.closest('#produkList')) {
+    document.getElementById('produkList').style.display = 'none';
+  }
+});
+
+document.getElementById('produkInput').addEventListener('focus', function() {
+  renderProdukPickerList(this.value);
+});
+document.getElementById('produkInput').addEventListener('input', function() {
+  renderProdukPickerList(this.value);
+});
+
+document.getElementById('btnAddHarga').addEventListener('click', openModalCreate);
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+
+document.getElementById('modalSubmit').addEventListener('click', async function() {
+  if (!selectedReseller) { showModalAlert('Pilih reseller dulu.'); return; }
+
+  var namaProduk = modalMode === 'create'
+    ? document.getElementById('produkInput').value.trim()
+    : modalEditing.nama_produk;
+  var harga = Number(document.getElementById('hargaInput').value);
+  var catatan = document.getElementById('catatanInput').value.trim();
+
+  if (!namaProduk) return showModalAlert('Pilih produk dulu.');
+  if (!harga || harga <= 0) return showModalAlert('Harga khusus harus > 0.');
+
+  var btn = this;
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Menyimpan...';
+
+  var r = await KK22_API.setHargaKhusus(selectedReseller.id, namaProduk, harga, catatan);
+  btn.disabled = false;
+  btn.textContent = orig;
+
+  if (!r.ok) {
+    showModalAlert(r.error || 'Gagal simpan.');
+    return;
+  }
+
+  closeModal();
+  showAlert(modalMode === 'create' ? 'Harga khusus ditambahkan.' : 'Harga khusus diupdate.', 'success');
+  await loadHargaList();
+});
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role !== 'admin' && r.data.role !== 'owner') {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  currentUser = r.data;
+
+  // Load reseller list + produk list (parallel)
+  var [rRes, rProd] = await Promise.all([
+    KK22_API.getResellerList(),
+    KK22_API.getProduk('', true)
+  ]);
+  if (rRes.ok) allResellers = rRes.data.items || [];
+  if (rProd.ok) allProduk = rProd.data.items || [];
+})();
+</script>
+</body>
+</html>

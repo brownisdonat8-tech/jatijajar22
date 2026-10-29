@@ -46,6 +46,9 @@ function doPost(e) {
       case 'getProdukInPOs':     return handleGetProdukInPOs_(body);
       case 'lockItemsBulk':      return handleLockItemsBulk_(body);
       case 'unlockItemsBulk':    return handleUnlockItemsBulk_(body);
+      case 'getHargaKhusus':      return handleGetHargaKhusus_(body);
+      case 'setHargaKhusus':      return handleSetHargaKhusus_(body);
+      case 'deleteHargaKhusus':   return handleDeleteHargaKhusus_(body);
       case 'getResellerList':    return handleGetResellerList_(body);
       case 'createUser':         return handleCreateUser_(body);
       case 'listUsers':          return handleListUsers_(body);
@@ -226,13 +229,26 @@ function handleGetProduk_(body) {
   const q = String(body.q || '').trim().toLowerCase();
   const isAdmin = (user.role === 'admin' || user.role === 'owner');
   const all = getProdukListCached_();
+  const hargaOverride = (!isAdmin && user.role === 'reseller' && user.id_reseller)
+    ? getHargaOverrideForReseller_(user.id_reseller)
+    : {};
 
   const items = [];
   for (let i = 0; i < all.length; i++) {
     const p = all[i];
     if (!isAdmin && !p.aktif) continue;
     if (q && String(p.nama_produk || '').toLowerCase().indexOf(q) === -1) continue;
-    items.push(p);
+    const ovr = hargaOverride[String(p.nama_produk || '').toLowerCase()];
+    if (ovr) {
+      // Override harga khusus — clone supaya cache global tidak tercemar
+      const cloned = Object.assign({}, p);
+      cloned.harga_default = p.harga_jual;
+      cloned.harga_jual = ovr.harga_khusus;
+      cloned.harga_khusus = true;
+      items.push(cloned);
+    } else {
+      items.push(p);
+    }
   }
 
   return jsonResponse_({

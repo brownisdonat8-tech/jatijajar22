@@ -80,7 +80,12 @@ function buildAdminNav() {
   adminUsers.href = 'admin-users.html';
   adminUsers.textContent = 'Admin Users';
 
-  navLinks.insertBefore(adminUsers, dashboardLink);
+  var adminHarga = document.createElement('a');
+  adminHarga.href = 'admin-harga.html';
+  adminHarga.textContent = 'Harga Khusus';
+
+  navLinks.insertBefore(adminHarga, dashboardLink);
+  navLinks.insertBefore(adminUsers, adminHarga);
   navLinks.insertBefore(adminPesanan, adminUsers);
 }
 
@@ -91,7 +96,8 @@ function buildAdminTiles() {
   var tiles = [
     { href: 'admin-pesanan.html', icon: '&#128203;', label: 'Admin Pesanan', desc: 'Kelola PO, lock item' },
     { href: 'admin-users.html',   icon: '&#128101;', label: 'Admin Users',   desc: 'Kelola akun user' },
-    { href: 'admin-produk.html',  icon: '&#127849;', label: 'Admin Produk',  desc: 'Aktif/nonaktif produk' }
+    { href: 'admin-produk.html',  icon: '&#127849;', label: 'Admin Produk',  desc: 'Aktif/nonaktif produk' },
+    { href: 'admin-harga.html',   icon: '&#128176;', label: 'Harga Khusus',  desc: 'Override harga reseller' }
   ];
 
   tiles.forEach(function(t) {
