@@ -58,6 +58,7 @@ function doPost(e) {
       case 'setPriceListItem':          return handleSetPriceListItem_(body);
       case 'bulkSetPriceListItems':     return handleBulkSetPriceListItems_(body);
       case 'assignPriceListToReseller': return handleAssignPriceListToReseller_(body);
+case 'bulkAssignPriceList':       return handleBulkAssignPriceList_(body);
       case 'getResellerAssignments':    return handleGetResellerAssignments_(body);
       case 'getResellerList':    return handleGetResellerList_(body);
       case 'createUser':         return handleCreateUser_(body);

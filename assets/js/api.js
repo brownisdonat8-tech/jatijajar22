@@ -369,6 +369,16 @@ window.KK22_API = (function() {
     return call('getResellerAssignments', { token: token });
   }
 
+  async function bulkAssignPriceList(idResellerList, idPriceList) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('bulkAssignPriceList', {
+      token: token,
+      id_reseller_list: idResellerList,
+      id_price_list: idPriceList || ''
+    });
+  }
+
   // ========== ADMIN: USER MANAGEMENT ==========
   async function createUser(noHp, pin, role, namaLengkap, idReseller) {
     const token = getToken();
@@ -422,6 +432,7 @@ window.KK22_API = (function() {
     bulkSetPriceListItems: bulkSetPriceListItems,
     assignPriceListToReseller: assignPriceListToReseller,
     getResellerAssignments: getResellerAssignments,
+    bulkAssignPriceList: bulkAssignPriceList,
     getHargaKhusus: getHargaKhusus,
     setHargaKhusus: setHargaKhusus,
     deleteHargaKhusus: deleteHargaKhusus,

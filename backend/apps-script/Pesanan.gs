@@ -440,7 +440,7 @@ function handleGetDetailPesanan_(body) {
 }
 
 // ============================================================
-// UPDATE PESANAN ITEMS (F7.5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â edit PO selama masih pending/partial_locked)
+// UPDATE PESANAN ITEMS (F7.5 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â edit PO selama masih pending/partial_locked)
 // Reseller bisa edit PO sendiri; admin/owner bisa edit semua.
 // Locked items: readonly (tidak boleh diubah).
 // items[] = FINAL list item PENDING saja (locked tidak dikirim, tetap ada).
@@ -661,7 +661,7 @@ function validasiItemsForUpdate_(rawItems) {
 }
 
 // ============================================================
-// F9.1 Ã¢â‚¬â€ HARGA KHUSUS PER RESELLER
+// F9.1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â HARGA KHUSUS PER RESELLER
 // ============================================================
 
 function getHargaOverrideForReseller_(idReseller) {
@@ -861,7 +861,7 @@ function handleDeleteHargaKhusus_(body) {
 }
 
 // ============================================================
-// F9.1b â€” PRICE LISTS (PAKET HARGA)
+// F9.1b Ã¢â‚¬â€ PRICE LISTS (PAKET HARGA)
 // ============================================================
 
 function getNextPriceListId_() {
@@ -1539,6 +1539,80 @@ function handleGetResellerAssignments_(body) {
   }
   list.sort(function(a, b) { return a.nama_reseller.localeCompare(b.nama_reseller); });
   return jsonResponse_({ ok: true, data: { total: list.length, items: list } });
+}
+
+function handleBulkAssignPriceList_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idResellerList = Array.isArray(body.id_reseller_list) ? body.id_reseller_list.map(String) : [];
+  const idPriceList = String(body.id_price_list || '').trim();
+
+  if (idResellerList.length === 0) return jsonResponse_({ ok: false, error: 'id_reseller_list wajib (min 1).' });
+  if (idResellerList.length > 100) return jsonResponse_({ ok: false, error: 'Maksimal 100 reseller per batch.' });
+
+  if (idPriceList) {
+    const header = getPriceListById_(idPriceList);
+    if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+    if (!header.aktif) return jsonResponse_({ ok: false, error: 'Paket nonaktif. Aktifkan dulu.' });
+  }
+
+  const targetSet = {};
+  idResellerList.forEach(function(id) { targetSet[id] = true; });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shR = getSheet_(CONFIG.SHEETS.RESELLER);
+    const lastR = shR.getLastRow();
+    if (lastR < 2) return jsonResponse_({ ok: false, error: 'Tidak ada reseller.' });
+
+    const dataR = shR.getRange(2, 1, lastR - 1, 44).getValues();
+    const updated = [];
+    const notFound = [];
+
+    for (let i = 0; i < dataR.length; i++) {
+      const idR = String(dataR[i][38] || '');
+      if (!idR || !targetSet[idR]) continue;
+      const currentPL = String(dataR[i][43] || '');
+      if (currentPL === idPriceList) {
+        notFound.push({ id_reseller: idR, reason: 'sudah pakai paket ini' });
+        continue;
+      }
+      shR.getRange(i + 2, 44).setValue(idPriceList || '');
+      updated.push(idR);
+    }
+
+    idResellerList.forEach(function(id) {
+      if (updated.indexOf(id) === -1 && !notFound.some(function(x) { return x.id_reseller === id; })) {
+        notFound.push({ id_reseller: id, reason: 'tidak ditemukan' });
+      }
+    });
+
+    updated.forEach(function(id) {
+      cacheInvalidate_(['reseller_pl_' + id]);
+    });
+
+    try {
+      logAktivitas_(user, 'bulkAssignPriceList',
+        'Bulk assign paket="' + idPriceList + '" ke ' + updated.length + ' reseller (skip ' + notFound.length + ')');
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: {
+        id_price_list: idPriceList,
+        total_updated: updated.length,
+        total_skipped: notFound.length,
+        updated_list: updated,
+        skipped_list: notFound
+      }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
 }
 
 // ============================================================

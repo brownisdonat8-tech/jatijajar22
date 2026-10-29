@@ -54,6 +54,22 @@
       </select>
       <button id="btnRefreshAssign" class="btn-secondary" style="width:auto;margin:0;padding:10px 14px;font-size:13px;">Refresh</button>
     </div>
+    <div class="filter-row" style="margin-bottom:8px;">
+      <label style="font-size:13px;color:#333;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="assignSelectAll">
+        Pilih Semua (yang tampil)
+      </label>
+    </div>
+
+    <div id="assignActionBar" class="bulk-action-bar" style="display:none;">
+      <div class="bulk-info" id="assignBulkInfo">0 reseller dipilih</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button id="btnBulkAssign" class="btn-bulk btn-bulk-lock">&#128230; Assign Paket</button>
+        <button id="btnBulkUnassign" class="btn-bulk btn-bulk-unlock">&#10005; Unassign</button>
+        <button id="btnBulkAssignClear" class="btn-bulk btn-bulk-clear">&#10005;</button>
+      </div>
+    </div>
+
     <div style="font-size:12px;color:#888;margin-bottom:8px;" id="assignCount">-</div>
     <div id="assignmentListWrap">
       <div class="empty-state"><span class="spinner"></span> Memuat...</div>
@@ -232,6 +248,30 @@
   </div>
 </div>
 
+<!-- ============ MODAL: Bulk Assign Paket ============ -->
+<div id="modalBulkAssign" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Bulk Assign Paket</h2>
+      <button class="modal-close" id="bulkAssignClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;margin-bottom:10px;">
+        Terapkan paket ke <b id="bulkAssignCount">0</b> reseller terpilih.
+      </p>
+      <div class="form-row">
+        <label for="bulkAssignSelect">Pilih Paket</label>
+        <select id="bulkAssignSelect"></select>
+      </div>
+      <div id="bulkAssignAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="bulkAssignCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="bulkAssignSubmit" type="button" style="flex:1;margin:0;">Assign</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: Custom Override ============ -->
 <div id="modalCustom" class="modal-overlay" style="display:none;">
   <div class="modal-box">
@@ -297,6 +337,9 @@ var assignments = [];
 
 var currentCustomReseller = null;
 var customList = [];
+var selectedAssigns = {};
+var filteredAssignments = [];
+var currentBulkAssignAction = 'assign';
 var currentMatrixPL = null;
 var currentMatrixItems = [];
 var matrixFilter = '';
@@ -477,10 +520,10 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// ============ F9.1b-10: Create Paket — Paste/Upload CSV ============
+// ============ F9.1b-10: Create Paket Ã¢â‚¬â€ Paste/Upload CSV ============
 var createPaketExcelItems = [];
 
-// Alias ke parser bulk (F9.1b-9) — shape { items, skipped }
+// Alias ke parser bulk (F9.1b-9) Ã¢â‚¬â€ shape { items, skipped }
 function parseExcelTextCsv(text) {
   return parseBulkTabularText(text);
 }
@@ -537,7 +580,7 @@ document.getElementById('cpExcelFile').addEventListener('change', function(e) {
   reader.readAsText(file, 'UTF-8');
 });
 
-// Download template (dari produk normal — kolom Harga Paket kosong)
+// Download template (dari produk normal Ã¢â‚¬â€ kolom Harga Paket kosong)
 document.getElementById('cpBtnDownloadTemplate').addEventListener('click', function() {
   if (!allProduk || allProduk.length === 0) {
     showCpAlert('Produk belum dimuat. Tutup & buka modal lagi.');
@@ -679,7 +722,7 @@ async function loadMatrix() {
   }
   currentMatrixItems = r.data.items || [];
   document.getElementById('matrixTitle').textContent = r.data.header.nama_paket;
-  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' Ãƒâ€šÃ‚Â· ' + currentMatrixItems.length + ' produk';
+  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ' + currentMatrixItems.length + ' produk';
   renderMatrix();
 }
 
@@ -993,17 +1036,27 @@ function renderAssignments() {
     if (filter === '_no_pl' && a.id_price_list) return false;
     return true;
   });
+  filteredAssignments = filtered;
   document.getElementById('assignCount').textContent = filtered.length + ' dari ' + assignments.length + ' reseller';
   var wrap = document.getElementById('assignmentListWrap');
   if (filtered.length === 0) {
     wrap.innerHTML = '<div class="empty-state">Tidak ada data.</div>';
+    updateBulkAssignActionBar();
     return;
   }
   var html = '<div class="assign-list">';
   filtered.slice(0, 200).forEach(function(a) {
-    var plLabel = a.id_price_list ? ('<span class="badge" style="background:#cce5ff;color:#004085;font-size:10px;">' + esc(a.nama_paket) + '</span>') : '<span style="color:#aaa;font-size:11px;">(normal)</span>';
-    var customBadge = a.custom_override_count > 0 ? ('<span class="badge" style="background:#fff3cd;color:#856404;font-size:10px;">' + a.custom_override_count + ' custom</span>') : '';
-    html += '<div class="assign-row">';
+    var isSel = !!selectedAssigns[a.id_reseller];
+    var plLabel = a.id_price_list
+      ? ('<span class="badge" style="background:#cce5ff;color:#004085;font-size:10px;">' + esc(a.nama_paket) + '</span>')
+      : '<span style="color:#aaa;font-size:11px;">(normal)</span>';
+    var customBadge = a.custom_override_count > 0
+      ? ('<span class="badge" style="background:#fff3cd;color:#856404;font-size:10px;">' + a.custom_override_count + ' custom</span>')
+      : '';
+    html += '<div class="assign-row' + (isSel ? ' selected' : '') + '" data-id="' + esc(a.id_reseller) + '">';
+    html += '<label class="assign-check" onclick="event.stopPropagation()">';
+    html += '<input type="checkbox" class="assign-chk" data-id="' + esc(a.id_reseller) + '"' + (isSel ? ' checked' : '') + '>';
+    html += '</label>';
     html += '<div class="assign-info">';
     html += '<div class="assign-nama">' + esc(a.nama_reseller) + '</div>';
     html += '<div class="assign-id">' + esc(a.id_reseller) + ' ' + plLabel + ' ' + customBadge + '</div>';
@@ -1015,11 +1068,29 @@ function renderAssignments() {
   if (filtered.length > 200) html += '<div style="font-size:12px;color:#888;text-align:center;padding:8px;">... dan ' + (filtered.length - 200) + ' lainnya. Gunakan search untuk filter.</div>';
   wrap.innerHTML = html;
 
+  wrap.querySelectorAll('.assign-chk').forEach(function(chk) {
+    chk.addEventListener('change', function(e) {
+      e.stopPropagation();
+      var id = chk.dataset.id;
+      if (chk.checked) selectedAssigns[id] = true;
+      else delete selectedAssigns[id];
+      var row = chk.closest('.assign-row');
+      if (row) row.classList.toggle('selected', chk.checked);
+      updateBulkAssignActionBar();
+    });
+  });
   wrap.querySelectorAll('.assign-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       openAssignModal(btn.dataset.id, btn.dataset.nama, btn.dataset.pl);
     });
   });
+
+  var chkAll = document.getElementById('assignSelectAll');
+  var visibleChk = wrap.querySelectorAll('.assign-chk');
+  var checkedChk = wrap.querySelectorAll('.assign-chk:checked');
+  chkAll.checked = visibleChk.length > 0 && visibleChk.length === checkedChk.length;
+
+  updateBulkAssignActionBar();
 }
 
 document.getElementById('assignmentSearch').addEventListener('input', renderAssignments);
@@ -1059,6 +1130,115 @@ document.getElementById('assignSubmit').addEventListener('click', async function
   }
   document.getElementById('modalAssign').style.display = 'none';
   showAlert('Paket reseller diupdate.', 'success');
+  await loadAssignments();
+});
+
+// ============ F9.1b-11d: BULK ASSIGN HANDLERS ============
+function updateBulkAssignActionBar() {
+  var n = Object.keys(selectedAssigns).length;
+  var bar = document.getElementById('assignActionBar');
+  var info = document.getElementById('assignBulkInfo');
+  if (!bar) return;
+  if (n === 0) {
+    bar.style.display = 'none';
+  } else {
+    bar.style.display = 'flex';
+    info.textContent = n + ' reseller dipilih';
+  }
+}
+
+document.getElementById('assignSelectAll').addEventListener('change', function() {
+  var checked = this.checked;
+  document.querySelectorAll('.assign-chk').forEach(function(chk) {
+    chk.checked = checked;
+    var id = chk.dataset.id;
+    if (checked) selectedAssigns[id] = true;
+    else delete selectedAssigns[id];
+    var row = chk.closest('.assign-row');
+    if (row) row.classList.toggle('selected', checked);
+  });
+  updateBulkAssignActionBar();
+});
+
+document.getElementById('btnBulkAssignClear').addEventListener('click', function() {
+  selectedAssigns = {};
+  renderAssignments();
+});
+
+document.getElementById('btnBulkAssign').addEventListener('click', function() {
+  var n = Object.keys(selectedAssigns).length;
+  if (n === 0) return;
+  if (n > 100) {
+    showAlert('Maksimal 100 reseller per batch. Persempit filter dulu.', 'error');
+    return;
+  }
+  document.getElementById('bulkAssignCount').textContent = n;
+  var sel = document.getElementById('bulkAssignSelect');
+  sel.innerHTML = '<option value="">-- Tidak pakai paket (harga normal) --</option>';
+  priceLists.forEach(function(pl) {
+    if (!pl.aktif) return;
+    sel.innerHTML += '<option value="' + esc(pl.id_price_list) + '">' + esc(pl.nama_paket) + ' (' + pl.total_item + ' produk)</option>';
+  });
+  document.getElementById('bulkAssignAlert').className = 'alert';
+  document.getElementById('modalBulkAssign').style.display = 'flex';
+});
+
+document.getElementById('bulkAssignClose').addEventListener('click', function() {
+  document.getElementById('modalBulkAssign').style.display = 'none';
+});
+document.getElementById('bulkAssignCancel').addEventListener('click', function() {
+  document.getElementById('modalBulkAssign').style.display = 'none';
+});
+
+document.getElementById('bulkAssignSubmit').addEventListener('click', async function() {
+  var ids = Object.keys(selectedAssigns);
+  if (ids.length === 0) return;
+  if (ids.length > 100) {
+    var b = document.getElementById('bulkAssignAlert');
+    b.className = 'alert alert-error show';
+    b.textContent = 'Maksimal 100 reseller per batch.';
+    return;
+  }
+  var idPL = document.getElementById('bulkAssignSelect').value;
+  var label = idPL ? 'paket terpilih' : 'normal (tanpa paket)';
+  if (!confirm('Assign ' + label + ' ke ' + ids.length + ' reseller?\n\nMaks 100 reseller per batch.')) return;
+  var btn = this;
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Memproses...';
+  var r = await KK22_API.bulkAssignPriceList(ids, idPL);
+  btn.disabled = false;
+  btn.textContent = orig;
+  if (!r.ok) {
+    var b2 = document.getElementById('bulkAssignAlert');
+    b2.className = 'alert alert-error show';
+    b2.textContent = r.error || 'Gagal assign.';
+    return;
+  }
+  document.getElementById('modalBulkAssign').style.display = 'none';
+  showAlert('Bulk assign: ' + r.data.total_updated + ' diupdate, ' + r.data.total_skipped + ' dilewati.', 'success');
+  selectedAssigns = {};
+  await loadAssignments();
+});
+
+document.getElementById('btnBulkUnassign').addEventListener('click', async function() {
+  var ids = Object.keys(selectedAssigns);
+  if (ids.length === 0) return;
+  if (ids.length > 100) {
+    showAlert('Maksimal 100 reseller per batch.', 'error');
+    return;
+  }
+  if (!confirm('Lepas paket dari ' + ids.length + ' reseller? (kembali ke harga normal)')) return;
+  var btn = this;
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'Memproses...';
+  var r = await KK22_API.bulkAssignPriceList(ids, '');
+  btn.disabled = false;
+  btn.textContent = orig;
+  if (!r.ok) { showAlert(r.error || 'Gagal unassign.', 'error'); return; }
+  showAlert('Bulk unassign: ' + r.data.total_updated + ' diupdate.', 'success');
+  selectedAssigns = {};
   await loadAssignments();
 });
 
