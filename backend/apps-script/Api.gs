@@ -49,6 +49,16 @@ function doPost(e) {
       case 'getHargaKhusus':      return handleGetHargaKhusus_(body);
       case 'setHargaKhusus':      return handleSetHargaKhusus_(body);
       case 'deleteHargaKhusus':   return handleDeleteHargaKhusus_(body);
+      case 'getPriceLists':             return handleGetPriceLists_(body);
+      case 'getPriceListDetail':        return handleGetPriceListDetail_(body);
+      case 'createPriceList':           return handleCreatePriceList_(body);
+      case 'renamePriceList':           return handleRenamePriceList_(body);
+      case 'togglePriceListAktif':      return handleTogglePriceListAktif_(body);
+      case 'deletePriceList':           return handleDeletePriceList_(body);
+      case 'setPriceListItem':          return handleSetPriceListItem_(body);
+      case 'bulkSetPriceListItems':     return handleBulkSetPriceListItems_(body);
+      case 'assignPriceListToReseller': return handleAssignPriceListToReseller_(body);
+      case 'getResellerAssignments':    return handleGetResellerAssignments_(body);
       case 'getResellerList':    return handleGetResellerList_(body);
       case 'createUser':         return handleCreateUser_(body);
       case 'listUsers':          return handleListUsers_(body);
@@ -220,6 +230,17 @@ function readConfig_(key) {
 // GET PRODUK (katalog untuk reseller)
 // ============================================================
 
+function getIdPriceListForReseller_(idReseller) {
+  if (!idReseller) return '';
+  const cacheKey = 'reseller_pl_' + idReseller;
+  const cached = cacheGet_(cacheKey);
+  if (cached !== null && cached !== undefined) return cached;
+  const rInfo = findResellerById_(idReseller);
+  const idPL = rInfo ? (rInfo.id_price_list || '') : '';
+  cachePut_(cacheKey, idPL, 300);
+  return idPL;
+}
+
 function handleGetProduk_(body) {
   const user = validateToken_(body.token);
   if (!user) {
@@ -229,23 +250,39 @@ function handleGetProduk_(body) {
   const q = String(body.q || '').trim().toLowerCase();
   const isAdmin = (user.role === 'admin' || user.role === 'owner');
   const all = getProdukListCached_();
-  const hargaOverride = (!isAdmin && user.role === 'reseller' && user.id_reseller)
-    ? getHargaOverrideForReseller_(user.id_reseller)
-    : {};
+
+  let hargaOverride = {};
+  let priceListOverride = {};
+  if (!isAdmin && user.role === 'reseller' && user.id_reseller) {
+    hargaOverride = getHargaOverrideForReseller_(user.id_reseller);
+    const idPL = getIdPriceListForReseller_(user.id_reseller);
+    if (idPL) {
+      priceListOverride = getPriceListOverrideForReseller_(idPL);
+    }
+  }
 
   const items = [];
   for (let i = 0; i < all.length; i++) {
     const p = all[i];
     if (!isAdmin && !p.aktif) continue;
     if (q && String(p.nama_produk || '').toLowerCase().indexOf(q) === -1) continue;
-    const ovr = hargaOverride[String(p.nama_produk || '').toLowerCase()];
-    if (ovr) {
-      // Override harga khusus — clone supaya cache global tidak tercemar
+    const key = String(p.nama_produk || '').toLowerCase();
+    const customOvr = hargaOverride[key];
+    const plOvr = priceListOverride[key];
+    if (customOvr) {
+      // Layer 3: custom override per reseller
       const cloned = Object.assign({}, p);
       cloned.harga_default = p.harga_jual;
-      cloned.harga_jual = ovr.harga_khusus;
+      cloned.harga_jual = customOvr.harga_khusus;
       cloned.harga_khusus = true;
       items.push(cloned);
+    } else if (plOvr) {
+      // Layer 2: paket harga (price list)
+      const cloned2 = Object.assign({}, p);
+      cloned2.harga_default = p.harga_jual;
+      cloned2.harga_jual = plOvr.harga;
+      cloned2.harga_price_list = true;
+      items.push(cloned2);
     } else {
       items.push(p);
     }
@@ -260,6 +297,7 @@ function handleGetProduk_(body) {
     }
   });
 }
+
 function readConfigCached_(key) {
   let all = cacheGet_('config_all');
   if (!all) {

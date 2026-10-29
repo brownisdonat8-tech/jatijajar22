@@ -162,6 +162,56 @@ function addResellerHargaSheet() {
   Logger.log('Sheet ' + name + ' berhasil dibuat dengan 7 kolom header.');
 }
 
+// ============================================================
+// F9.1b - MANUAL: Setup 2 sheet Price List + kolom RESELLER.id_price_list
+// Jalankan sekali dari Apps Script editor. Idempotent (aman run 2x).
+// ============================================================
+function addPriceListSheets() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+  // 1) PRICE_LISTS
+  const name1 = CONFIG.SHEETS.PRICE_LISTS;
+  if (!ss.getSheetByName(name1)) {
+    createSheet_(ss, name1, [
+      'id_price_list', 'nama_paket', 'deskripsi',
+      'aktif', 'tgl_dibuat', 'diupdate_oleh', 'tgl_update_terakhir'
+    ]);
+    Logger.log('✅ Sheet ' + name1 + ' dibuat (7 kolom)');
+  } else {
+    Logger.log('ℹ Sheet ' + name1 + ' sudah ada. Skip.');
+  }
+
+  // 2) PRICE_LIST_ITEMS
+  const name2 = CONFIG.SHEETS.PRICE_LIST_ITEMS;
+  if (!ss.getSheetByName(name2)) {
+    createSheet_(ss, name2, [
+      'id_price_list_item', 'id_price_list', 'nama_produk',
+      'harga', 'tgl_dibuat', 'tgl_update_terakhir'
+    ]);
+    Logger.log('✅ Sheet ' + name2 + ' dibuat (6 kolom)');
+  } else {
+    Logger.log('ℹ Sheet ' + name2 + ' sudah ada. Skip.');
+  }
+}
+
+function addResellerIdPriceListColumn() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  const sh = ss.getSheetByName(CONFIG.SHEETS.RESELLER);
+  if (!sh) {
+    Logger.log('❌ Sheet RESELLER tidak ditemukan');
+    return;
+  }
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const alreadyHas = headers.some(function(h) { return String(h).toLowerCase() === 'id_price_list'; });
+  if (alreadyHas) {
+    Logger.log('ℹ Kolom id_price_list sudah ada. Skip.');
+    return;
+  }
+  const newCol = headers.length + 1;
+  sh.getRange(1, newCol).setValue('id_price_list');
+  Logger.log('✅ Kolom id_price_list ditambahkan di kolom ke-' + newCol + ' (' + (headers.length + 1) + ')');
+}
+
 function testConnection() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   Logger.log('Terhubung ke : ' + ss.getName());

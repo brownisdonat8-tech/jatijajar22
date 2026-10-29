@@ -285,6 +285,90 @@ window.KK22_API = (function() {
     });
   }
 
+  // ========== ADMIN: PRICE LISTS (F9.1b) ==========
+  async function getPriceLists() {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getPriceLists', { token: token });
+  }
+
+  async function getPriceListDetail(idPriceList) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getPriceListDetail', { token: token, id_price_list: idPriceList });
+  }
+
+  async function createPriceList(namaPaket, deskripsi, sourceType, sourceId, items) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const body = {
+      token: token,
+      nama_paket: namaPaket,
+      deskripsi: deskripsi || '',
+      source_type: sourceType || 'normal'
+    };
+    if (sourceId) body.source_id = sourceId;
+    if (Array.isArray(items) && items.length > 0) body.items = items;
+    return call('createPriceList', body);
+  }
+
+  async function renamePriceList(idPriceList, namaBaru, deskripsi) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    const body = { token: token, id_price_list: idPriceList, nama_baru: namaBaru };
+    if (deskripsi !== undefined && deskripsi !== null) body.deskripsi = deskripsi;
+    return call('renamePriceList', body);
+  }
+
+  async function togglePriceListAktif(idPriceList, aktif) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('togglePriceListAktif', { token: token, id_price_list: idPriceList, aktif: !!aktif });
+  }
+
+  async function deletePriceList(idPriceList) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('deletePriceList', { token: token, id_price_list: idPriceList });
+  }
+
+  async function setPriceListItem(idPriceList, namaProduk, harga) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('setPriceListItem', {
+      token: token,
+      id_price_list: idPriceList,
+      nama_produk: namaProduk,
+      harga: Number(harga)
+    });
+  }
+
+  async function bulkSetPriceListItems(idPriceList, items) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('bulkSetPriceListItems', {
+      token: token,
+      id_price_list: idPriceList,
+      items: items || []
+    });
+  }
+
+  async function assignPriceListToReseller(idReseller, idPriceList) {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('assignPriceListToReseller', {
+      token: token,
+      id_reseller: idReseller,
+      id_price_list: idPriceList || ''
+    });
+  }
+
+  async function getResellerAssignments() {
+    const token = getToken();
+    if (!token) return { ok: false, error: 'No token' };
+    return call('getResellerAssignments', { token: token });
+  }
+
   // ========== ADMIN: USER MANAGEMENT ==========
   async function createUser(noHp, pin, role, namaLengkap, idReseller) {
     const token = getToken();
@@ -328,6 +412,16 @@ window.KK22_API = (function() {
     toggleProdukAktif: toggleProdukAktif,
     createUser: createUser,
     listUsers: listUsers,
+    getPriceLists: getPriceLists,
+    getPriceListDetail: getPriceListDetail,
+    createPriceList: createPriceList,
+    renamePriceList: renamePriceList,
+    togglePriceListAktif: togglePriceListAktif,
+    deletePriceList: deletePriceList,
+    setPriceListItem: setPriceListItem,
+    bulkSetPriceListItems: bulkSetPriceListItems,
+    assignPriceListToReseller: assignPriceListToReseller,
+    getResellerAssignments: getResellerAssignments,
     getHargaKhusus: getHargaKhusus,
     setHargaKhusus: setHargaKhusus,
     deleteHargaKhusus: deleteHargaKhusus,

@@ -440,7 +440,7 @@ function handleGetDetailPesanan_(body) {
 }
 
 // ============================================================
-// UPDATE PESANAN ITEMS (F7.5 â€” edit PO selama masih pending/partial_locked)
+// UPDATE PESANAN ITEMS (F7.5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â edit PO selama masih pending/partial_locked)
 // Reseller bisa edit PO sendiri; admin/owner bisa edit semua.
 // Locked items: readonly (tidak boleh diubah).
 // items[] = FINAL list item PENDING saja (locked tidak dikirim, tetap ada).
@@ -661,7 +661,7 @@ function validasiItemsForUpdate_(rawItems) {
 }
 
 // ============================================================
-// F9.1 — HARGA KHUSUS PER RESELLER
+// F9.1 Ã¢â‚¬â€ HARGA KHUSUS PER RESELLER
 // ============================================================
 
 function getHargaOverrideForReseller_(idReseller) {
@@ -861,6 +861,687 @@ function handleDeleteHargaKhusus_(body) {
 }
 
 // ============================================================
+// F9.1b â€” PRICE LISTS (PAKET HARGA)
+// ============================================================
+
+function getNextPriceListId_() {
+  const sh = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+  const last = sh.getLastRow();
+  if (last < 2) return 'KK22-PL-0001';
+  const data = sh.getRange(2, 1, last - 1, 1).getValues();
+  let maxNum = 0;
+  data.forEach(function(r) {
+    const m = String(r[0] || '').match(/-PL-(\d+)/);
+    if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
+  });
+  return 'KK22-PL-' + pad4_(maxNum + 1);
+}
+
+function getMaxPriceListItemNum_() {
+  const sh = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+  const last = sh.getLastRow();
+  if (last < 2) return 0;
+  const data = sh.getRange(2, 1, last - 1, 1).getValues();
+  let maxNum = 0;
+  data.forEach(function(r) {
+    const m = String(r[0] || '').match(/-PLI-(\d+)/);
+    if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
+  });
+  return maxNum;
+}
+
+function getPriceListById_(idPriceList) {
+  const sh = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+  const last = sh.getLastRow();
+  if (last < 2) return null;
+  const data = sh.getRange(2, 1, last - 1, 7).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (String(data[i][0]) === String(idPriceList)) {
+      return {
+        id_price_list: String(data[i][0]),
+        nama_paket: String(data[i][1] || ''),
+        deskripsi: String(data[i][2] || ''),
+        aktif: String(data[i][3] || '').toUpperCase() === 'TRUE',
+        tgl_dibuat: String(data[i][4] || ''),
+        diupdate_oleh: String(data[i][5] || ''),
+        tgl_update_terakhir: String(data[i][6] || ''),
+        rowIndex: i + 2
+      };
+    }
+  }
+  return null;
+}
+
+function getPriceListOverrideForReseller_(idPriceList) {
+  if (!idPriceList) return {};
+  const cacheKey = 'price_list_override_' + idPriceList;
+  const cached = cacheGet_(cacheKey);
+  if (cached && typeof cached === 'object') return cached;
+
+  const sh = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+  if (!sh) return {};
+  const last = sh.getLastRow();
+  if (last < 2) {
+    cachePut_(cacheKey, {}, 300);
+    return {};
+  }
+  const data = sh.getRange(2, 1, last - 1, 6).getValues();
+  const map = {};
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    if (String(r[1]) !== String(idPriceList)) continue;
+    const nama = String(r[2] || '').trim();
+    const harga = Number(r[3]) || 0;
+    if (!nama || harga <= 0) continue;
+    map[nama.toLowerCase()] = { harga: harga };
+  }
+  cachePut_(cacheKey, map, 300);
+  return map;
+}
+
+function getDefaultHargaMap_() {
+  const sh = getSheet_(CONFIG.SHEETS.PRODUK);
+  const last = sh.getLastRow();
+  if (last < 2) return {};
+  const data = sh.getRange(2, 1, last - 1, 20).getValues();
+  const map = {};
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    const nama = String(r[0] || '').trim();
+    if (!nama) continue;
+    map[nama.toLowerCase()] = {
+      nama_produk: nama,
+      harga: Number(r[9]) || 0,
+      aktif: String(r[17] || '').toUpperCase() === 'TRUE'
+    };
+  }
+  return map;
+}
+
+function handleGetPriceLists_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const sh = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+  const last = sh.getLastRow();
+  const items = [];
+  if (last >= 2) {
+    const data = sh.getRange(2, 1, last - 1, 7).getValues();
+    const shI = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+    const lastI = shI.getLastRow();
+    const countMap = {};
+    if (lastI >= 2) {
+      const dataI = shI.getRange(2, 1, lastI - 1, 2).getValues();
+      dataI.forEach(function(r) {
+        const id = String(r[1]);
+        countMap[id] = (countMap[id] || 0) + 1;
+      });
+    }
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      items.push({
+        id_price_list: String(r[0]),
+        nama_paket: String(r[1] || ''),
+        deskripsi: String(r[2] || ''),
+        aktif: String(r[3] || '').toUpperCase() === 'TRUE',
+        total_item: countMap[String(r[0])] || 0,
+        tgl_dibuat: String(r[4] || ''),
+        diupdate_oleh: String(r[5] || ''),
+        tgl_update_terakhir: String(r[6] || '')
+      });
+    }
+  }
+  items.sort(function(a, b) { return a.nama_paket.localeCompare(b.nama_paket); });
+  return jsonResponse_({ ok: true, data: { total: items.length, items: items } });
+}
+
+function handleGetPriceListDetail_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPriceList = String(body.id_price_list || '').trim();
+  if (!idPriceList) return jsonResponse_({ ok: false, error: 'id_price_list wajib diisi.' });
+
+  const header = getPriceListById_(idPriceList);
+  if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+
+  const produkMap = getDefaultHargaMap_();
+
+  const shI = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+  const lastI = shI.getLastRow();
+  const itemsMap = {};
+  if (lastI >= 2) {
+    const dataI = shI.getRange(2, 1, lastI - 1, 6).getValues();
+    dataI.forEach(function(r) {
+      if (String(r[1]) !== idPriceList) return;
+      const nama = String(r[2] || '').trim();
+      if (!nama) return;
+      itemsMap[nama.toLowerCase()] = Number(r[3]) || 0;
+    });
+  }
+
+  const items = [];
+  Object.keys(produkMap).forEach(function(key) {
+    const p = produkMap[key];
+    if (!p.aktif) return;
+    items.push({
+      nama_produk: p.nama_produk,
+      harga_default: p.harga,
+      harga_paket: itemsMap[key] || 0
+    });
+  });
+  items.sort(function(a, b) { return a.nama_produk.localeCompare(b.nama_produk); });
+
+  return jsonResponse_({ ok: true, data: { header: header, total: items.length, items: items } });
+}
+
+function handleCreatePriceList_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const namaPaket = String(body.nama_paket || '').trim();
+  const deskripsi = String(body.deskripsi || '').trim();
+  const sourceType = String(body.source_type || 'normal').toLowerCase();
+
+  if (!namaPaket) return jsonResponse_({ ok: false, error: 'nama_paket wajib diisi.' });
+  const validTypes = ['normal', 'price_list', 'reseller', 'excel', 'empty'];
+  if (validTypes.indexOf(sourceType) === -1) {
+    return jsonResponse_({ ok: false, error: 'source_type tidak valid. Pilih: ' + validTypes.join(', ') });
+  }
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const produkMap = getDefaultHargaMap_();
+    const newPriceListId = getNextPriceListId_();
+    const now = nowJakarta_();
+    const itemsMap = {};
+
+    if (sourceType === 'normal') {
+      Object.keys(produkMap).forEach(function(key) {
+        const p = produkMap[key];
+        if (p.aktif) itemsMap[key] = p.harga;
+      });
+    } else if (sourceType === 'price_list') {
+      const srcId = String(body.source_id || '').trim();
+      if (!srcId) return jsonResponse_({ ok: false, error: 'source_id (id_price_list) wajib untuk source price_list.' });
+      const src = getPriceListById_(srcId);
+      if (!src) return jsonResponse_({ ok: false, error: 'Paket sumber tidak ditemukan.' });
+      const shSrc = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+      const lastSrc = shSrc.getLastRow();
+      if (lastSrc >= 2) {
+        const dataSrc = shSrc.getRange(2, 1, lastSrc - 1, 6).getValues();
+        dataSrc.forEach(function(r) {
+          if (String(r[1]) === srcId) {
+            itemsMap[String(r[2]).toLowerCase()] = Number(r[3]) || 0;
+          }
+        });
+      }
+    } else if (sourceType === 'reseller') {
+      const srcReseller = String(body.source_id || '').trim();
+      if (!srcReseller) return jsonResponse_({ ok: false, error: 'source_id (id_reseller) wajib untuk source reseller.' });
+      const rInfo = findResellerById_(srcReseller);
+      if (!rInfo) return jsonResponse_({ ok: false, error: 'Reseller sumber tidak ditemukan.' });
+
+      Object.keys(produkMap).forEach(function(key) {
+        const p = produkMap[key];
+        if (p.aktif) itemsMap[key] = p.harga;
+      });
+
+      if (rInfo.id_price_list) {
+        const shPL = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+        const lastPL = shPL.getLastRow();
+        if (lastPL >= 2) {
+          const dataPL = shPL.getRange(2, 1, lastPL - 1, 6).getValues();
+          dataPL.forEach(function(r) {
+            if (String(r[1]) === rInfo.id_price_list) {
+              itemsMap[String(r[2]).toLowerCase()] = Number(r[3]) || 0;
+            }
+          });
+        }
+      }
+
+      const customMap = getHargaOverrideForReseller_(srcReseller);
+      Object.keys(customMap).forEach(function(key) {
+        itemsMap[key] = customMap[key].harga_khusus;
+      });
+    } else if (sourceType === 'excel') {
+      const rawItems = Array.isArray(body.items) ? body.items : [];
+      if (rawItems.length === 0) return jsonResponse_({ ok: false, error: 'items[] wajib untuk source excel.' });
+      rawItems.forEach(function(it) {
+        const nama = String(it.nama_produk || '').trim();
+        const harga = Number(it.harga);
+        if (!nama || !harga || harga <= 0) return;
+        const key = nama.toLowerCase();
+        if (produkMap[key]) {
+          itemsMap[key] = harga;
+        }
+      });
+    } else if (sourceType === 'empty') {
+      // skip
+    }
+
+    const shPL = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+    const newRow = shPL.getLastRow() + 1;
+    shPL.getRange(newRow, 1, 1, 7).setValues([[
+      newPriceListId, namaPaket, deskripsi, 'TRUE', now, user.id_user, now
+    ]]);
+
+    const itemKeys = Object.keys(itemsMap);
+    if (itemKeys.length > 0) {
+      const shItem = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+      const maxNum = getMaxPriceListItemNum_();
+      const rows = [];
+      let counter = maxNum;
+      itemKeys.forEach(function(key) {
+        counter++;
+        rows.push([
+          'KK22-PLI-' + pad4_(counter),
+          newPriceListId,
+          produkMap[key].nama_produk,
+          itemsMap[key],
+          now,
+          now
+        ]);
+      });
+      const startRow = shItem.getLastRow() + 1;
+      shItem.getRange(startRow, 1, rows.length, 6).setValues(rows);
+    }
+
+    cacheInvalidate_(['price_list_override_' + newPriceListId]);
+
+    try {
+      logAktivitas_(user, 'createPriceList',
+        'Paket ' + newPriceListId + ' (' + namaPaket + ') source=' + sourceType + ', ' + itemKeys.length + ' item');
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: {
+        id_price_list: newPriceListId,
+        nama_paket: namaPaket,
+        deskripsi: deskripsi,
+        source_type: sourceType,
+        total_item: itemKeys.length
+      }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleRenamePriceList_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPriceList = String(body.id_price_list || '').trim();
+  const namaBaru = String(body.nama_baru || '').trim();
+  const deskripsi = String(body.deskripsi || '').trim();
+  if (!idPriceList) return jsonResponse_({ ok: false, error: 'id_price_list wajib diisi.' });
+  if (!namaBaru) return jsonResponse_({ ok: false, error: 'nama_baru wajib diisi.' });
+
+  const header = getPriceListById_(idPriceList);
+  if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+
+  const sh = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+  const now = nowJakarta_();
+  sh.getRange(header.rowIndex, 2).setValue(namaBaru);
+  if (deskripsi !== null && deskripsi !== undefined && body.deskripsi !== undefined) {
+    sh.getRange(header.rowIndex, 3).setValue(deskripsi);
+  }
+  sh.getRange(header.rowIndex, 6).setValue(user.id_user);
+  sh.getRange(header.rowIndex, 7).setValue(now);
+
+  try {
+    logAktivitas_(user, 'renamePriceList',
+      'Paket ' + idPriceList + ': "' + header.nama_paket + '" -> "' + namaBaru + '"');
+  } catch (e) {}
+
+  return jsonResponse_({ ok: true, data: { id_price_list: idPriceList, nama_paket: namaBaru } });
+}
+
+function handleTogglePriceListAktif_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPriceList = String(body.id_price_list || '').trim();
+  const aktifBaru = body.aktif;
+  if (!idPriceList) return jsonResponse_({ ok: false, error: 'id_price_list wajib diisi.' });
+  if (typeof aktifBaru !== 'boolean') return jsonResponse_({ ok: false, error: 'Field aktif harus boolean.' });
+
+  const header = getPriceListById_(idPriceList);
+  if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+
+  const sh = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+  const now = nowJakarta_();
+  sh.getRange(header.rowIndex, 4).setValue(aktifBaru ? 'TRUE' : 'FALSE');
+  sh.getRange(header.rowIndex, 6).setValue(user.id_user);
+  sh.getRange(header.rowIndex, 7).setValue(now);
+
+  try {
+    logAktivitas_(user, 'togglePriceListAktif', 'Paket ' + idPriceList + ' aktif=' + aktifBaru);
+  } catch (e) {}
+
+  return jsonResponse_({ ok: true, data: { id_price_list: idPriceList, aktif: aktifBaru } });
+}
+
+function handleDeletePriceList_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPriceList = String(body.id_price_list || '').trim();
+  if (!idPriceList) return jsonResponse_({ ok: false, error: 'id_price_list wajib diisi.' });
+
+  const header = getPriceListById_(idPriceList);
+  if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+
+  const shR = getSheet_(CONFIG.SHEETS.RESELLER);
+  const lastR = shR.getLastRow();
+  let usedCount = 0;
+  if (lastR >= 2) {
+    const dataR = shR.getRange(2, 1, lastR - 1, 44).getValues();
+    for (let i = 0; i < dataR.length; i++) {
+      if (String(dataR[i][43]) === idPriceList) usedCount++;
+    }
+  }
+  if (usedCount > 0) {
+    return jsonResponse_({ ok: false, error: 'Paket masih dipakai oleh ' + usedCount + ' reseller. Lepas dulu sebelum hapus.' });
+  }
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shI = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+    const lastI = shI.getLastRow();
+    if (lastI >= 2) {
+      const dataI = shI.getRange(2, 1, lastI - 1, 6).getValues();
+      const toDelete = [];
+      for (let i = 0; i < dataI.length; i++) {
+        if (String(dataI[i][1]) === idPriceList) toDelete.push(i + 2);
+      }
+      toDelete.sort(function(a, b) { return b - a; });
+      toDelete.forEach(function(rowIdx) { shI.deleteRow(rowIdx); });
+    }
+
+    const shPL = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+    shPL.deleteRow(header.rowIndex);
+
+    cacheInvalidate_(['price_list_override_' + idPriceList]);
+
+    try {
+      logAktivitas_(user, 'deletePriceList',
+        'Paket ' + idPriceList + ' (' + header.nama_paket + ') dihapus');
+    } catch (e) {}
+
+    return jsonResponse_({ ok: true, data: { id_price_list: idPriceList, nama_paket: header.nama_paket } });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleSetPriceListItem_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPriceList = String(body.id_price_list || '').trim();
+  const namaProduk = String(body.nama_produk || '').trim();
+  const harga = Number(body.harga);
+  if (!idPriceList) return jsonResponse_({ ok: false, error: 'id_price_list wajib diisi.' });
+  if (!namaProduk) return jsonResponse_({ ok: false, error: 'nama_produk wajib diisi.' });
+  if (!harga || harga <= 0) return jsonResponse_({ ok: false, error: 'harga harus angka > 0.' });
+
+  const header = getPriceListById_(idPriceList);
+  if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shI = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+    const lastI = shI.getLastRow();
+    let foundRow = -1;
+    let foundExistingHarga = 0;
+    if (lastI >= 2) {
+      const dataI = shI.getRange(2, 1, lastI - 1, 6).getValues();
+      for (let i = 0; i < dataI.length; i++) {
+        if (String(dataI[i][1]) === idPriceList &&
+            String(dataI[i][2]).toLowerCase() === namaProduk.toLowerCase()) {
+          foundRow = i + 2;
+          foundExistingHarga = Number(dataI[i][3]) || 0;
+          break;
+        }
+      }
+    }
+
+    const now = nowJakarta_();
+    if (foundRow > 0) {
+      shI.getRange(foundRow, 4).setValue(harga);
+      shI.getRange(foundRow, 6).setValue(now);
+    } else {
+      const maxNum = getMaxPriceListItemNum_();
+      const newRow = shI.getLastRow() + 1;
+      shI.getRange(newRow, 1, 1, 6).setValues([[
+        'KK22-PLI-' + pad4_(maxNum + 1),
+        idPriceList, namaProduk, harga, now, now
+      ]]);
+    }
+
+    cacheInvalidate_(['price_list_override_' + idPriceList]);
+
+    try {
+      logAktivitas_(user, 'setPriceListItem',
+        'Paket ' + idPriceList + ', produk ' + namaProduk + ', harga=' + harga +
+        (foundRow > 0 ? ' (sebelumnya ' + foundExistingHarga + ')' : ' (baru)'));
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: {
+        mode: foundRow > 0 ? 'updated' : 'created',
+        id_price_list: idPriceList,
+        nama_produk: namaProduk,
+        harga: harga
+      }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleBulkSetPriceListItems_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idPriceList = String(body.id_price_list || '').trim();
+  if (!idPriceList) return jsonResponse_({ ok: false, error: 'id_price_list wajib diisi.' });
+  const rawItems = Array.isArray(body.items) ? body.items : [];
+  if (rawItems.length === 0) return jsonResponse_({ ok: false, error: 'items[] wajib.' });
+
+  const header = getPriceListById_(idPriceList);
+  if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+
+  const produkMap = getDefaultHargaMap_();
+
+  const validItems = [];
+  rawItems.forEach(function(it) {
+    const nama = String(it.nama_produk || '').trim();
+    const harga = Number(it.harga);
+    if (!nama || !harga || harga <= 0) return;
+    const key = nama.toLowerCase();
+    if (!produkMap[key]) return;
+    validItems.push({ key: key, nama: produkMap[key].nama_produk, harga: harga });
+  });
+
+  if (validItems.length === 0) {
+    return jsonResponse_({ ok: false, error: 'Tidak ada item valid untuk disimpan.' });
+  }
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+
+    const shI = getSheet_(CONFIG.SHEETS.PRICE_LIST_ITEMS);
+    const lastI = shI.getLastRow();
+    const existingMap = {};
+    if (lastI >= 2) {
+      const dataI = shI.getRange(2, 1, lastI - 1, 6).getValues();
+      for (let i = 0; i < dataI.length; i++) {
+        if (String(dataI[i][1]) !== idPriceList) continue;
+        existingMap[String(dataI[i][2]).toLowerCase()] = i + 2;
+      }
+    }
+
+    const now = nowJakarta_();
+    let updated = 0;
+    let created = 0;
+    let nextNum = getMaxPriceListItemNum_();
+    const newRows = [];
+
+    validItems.forEach(function(it) {
+      const existingRow = existingMap[it.key];
+      if (existingRow > 0) {
+        shI.getRange(existingRow, 4).setValue(it.harga);
+        shI.getRange(existingRow, 6).setValue(now);
+        updated++;
+      } else {
+        nextNum++;
+        newRows.push([
+          'KK22-PLI-' + pad4_(nextNum),
+          idPriceList, it.nama, it.harga, now, now
+        ]);
+        created++;
+      }
+    });
+
+    if (newRows.length > 0) {
+      const startRow = shI.getLastRow() + 1;
+      shI.getRange(startRow, 1, newRows.length, 6).setValues(newRows);
+    }
+
+    cacheInvalidate_(['price_list_override_' + idPriceList]);
+
+    try {
+      logAktivitas_(user, 'bulkSetPriceListItems',
+        'Paket ' + idPriceList + ': updated=' + updated + ', created=' + created);
+    } catch (e) {}
+
+    return jsonResponse_({
+      ok: true,
+      data: { id_price_list: idPriceList, updated: updated, created: created, total: validItems.length }
+    });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+function handleAssignPriceListToReseller_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const idReseller = String(body.id_reseller || '').trim();
+  const idPriceList = String(body.id_price_list || '').trim();
+  if (!idReseller) return jsonResponse_({ ok: false, error: 'id_reseller wajib diisi.' });
+
+  const shR = getSheet_(CONFIG.SHEETS.RESELLER);
+  const lastR = shR.getLastRow();
+  if (lastR < 2) return jsonResponse_({ ok: false, error: 'Tidak ada reseller.' });
+
+  const dataR = shR.getRange(2, 1, lastR - 1, 44).getValues();
+  let foundRowIdx = -1;
+  let currentIdPL = '';
+  for (let i = 0; i < dataR.length; i++) {
+    if (String(dataR[i][38]) === idReseller) {
+      foundRowIdx = i + 2;
+      currentIdPL = String(dataR[i][43] || '');
+      break;
+    }
+  }
+  if (foundRowIdx === -1) return jsonResponse_({ ok: false, error: 'Reseller tidak ditemukan.' });
+
+  if (idPriceList) {
+    const header = getPriceListById_(idPriceList);
+    if (!header) return jsonResponse_({ ok: false, error: 'Paket tidak ditemukan.' });
+    if (!header.aktif) return jsonResponse_({ ok: false, error: 'Paket nonaktif. Aktifkan dulu.' });
+  }
+
+  shR.getRange(foundRowIdx, 44).setValue(idPriceList || '');
+
+  try {
+    logAktivitas_(user, 'assignPriceListToReseller',
+      'Reseller ' + idReseller + ': "' + currentIdPL + '" -> "' + idPriceList + '"');
+  } catch (e) {}
+
+  return jsonResponse_({
+    ok: true,
+    data: { id_reseller: idReseller, id_price_list_lama: currentIdPL, id_price_list_baru: idPriceList }
+  });
+}
+
+function handleGetResellerAssignments_(body) {
+  const user = validateToken_(body.token);
+  if (!user) return jsonResponse_({ ok: false, error: 'Token tidak valid atau expired.' });
+  if (!requireAdmin_(user)) return jsonResponse_({ ok: false, error: 'Hanya admin/owner.' });
+
+  const shR = getSheet_(CONFIG.SHEETS.RESELLER);
+  const lastR = shR.getLastRow();
+  const list = [];
+  if (lastR >= 2) {
+    const dataR = shR.getRange(2, 1, lastR - 1, 44).getValues();
+
+    const shH = getSheet_(CONFIG.SHEETS.RESELLER_HARGA);
+    const lastH = shH.getLastRow();
+    const customCountMap = {};
+    if (lastH >= 2) {
+      const dataH = shH.getRange(2, 1, lastH - 1, 2).getValues();
+      dataH.forEach(function(r) {
+        const idR = String(r[0]);
+        customCountMap[idR] = (customCountMap[idR] || 0) + 1;
+      });
+    }
+
+    const shPL = getSheet_(CONFIG.SHEETS.PRICE_LISTS);
+    const lastPL = shPL.getLastRow();
+    const priceListMap = {};
+    if (lastPL >= 2) {
+      const dataPL = shPL.getRange(2, 1, lastPL - 1, 7).getValues();
+      dataPL.forEach(function(r) {
+        priceListMap[String(r[0])] = { nama_paket: String(r[1] || ''), aktif: String(r[3] || '').toUpperCase() === 'TRUE' };
+      });
+    }
+
+    for (let i = 0; i < dataR.length; i++) {
+      const r = dataR[i];
+      const idR = String(r[38] || '');
+      if (!idR) continue;
+      const idPL = String(r[43] || '');
+      const plInfo = priceListMap[idPL] || null;
+      list.push({
+        id_reseller: idR,
+        nama_reseller: String(r[1] || ''),
+        aktif: String(r[39] || '').toUpperCase() === 'TRUE',
+        id_price_list: idPL,
+        nama_paket: plInfo ? plInfo.nama_paket : '',
+        paket_aktif: plInfo ? plInfo.aktif : null,
+        custom_override_count: customCountMap[idR] || 0
+      });
+    }
+  }
+  list.sort(function(a, b) { return a.nama_reseller.localeCompare(b.nama_reseller); });
+  return jsonResponse_({ ok: true, data: { total: list.length, items: list } });
+}
+
+// ============================================================
 // HELPERS
 // ============================================================
 
@@ -868,13 +1549,14 @@ function findResellerById_(idReseller) {
   const sh = getSheet_(CONFIG.SHEETS.RESELLER);
   const last = sh.getLastRow();
   if (last < 2) return null;
-  const data = sh.getRange(2, 1, last - 1, 43).getValues();
+  const data = sh.getRange(2, 1, last - 1, 44).getValues();
   for (let i = 0; i < data.length; i++) {
     if (String(data[i][38]) === String(idReseller)) {
       return {
         id_reseller: String(data[i][38]),
         nama_reseller: String(data[i][1] || ''),
-        aktif: data[i][39]
+        aktif: data[i][39],
+        id_price_list: String(data[i][43] || '')
       };
     }
   }

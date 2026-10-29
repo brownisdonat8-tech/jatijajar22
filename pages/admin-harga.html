@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Harga Khusus - Kunang-kunang 22</title>
+<title>Kelola Harga - Kunang-kunang 22</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body class="wide">
@@ -14,83 +14,228 @@
       <a href="admin-pesanan.html">Admin Pesanan</a>
       <a href="admin-users.html">Admin Users</a>
       <a href="admin-produk.html">Admin Produk</a>
-      <a href="admin-harga.html" class="active">Harga Khusus</a>
+      <a href="admin-harga.html" class="active">Harga</a>
       <a href="dashboard.html">Dashboard</a>
       <button id="btnLogout">Keluar</button>
     </div>
   </nav>
 
-  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Harga Khusus per Reseller</h1>
-  <p style="color:#888;font-size:13px;margin-bottom:16px;">Override harga default untuk reseller tertentu. Hanya berlaku untuk reseller yang dipilih.</p>
+  <h1 style="text-align:left;font-size:18px;margin-bottom:6px;">Kelola Harga</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:16px;">Paket harga, assign ke reseller, dan override custom per reseller.</p>
 
-  <div class="form-row" style="margin-bottom:16px;">
-    <label for="resellerSelect">Pilih Reseller <span style="color:#dc3545">*</span></label>
-    <div class="autocomplete-wrap">
-      <input type="text" id="resellerInput" placeholder="Ketik nama reseller..." autocomplete="off">
-      <div class="autocomplete-list" id="resellerList" style="display:none;"></div>
-    </div>
-    <div class="hint" id="selectedInfo" style="display:none;"></div>
+  <div class="tabs" id="mainTabs">
+    <button class="active" data-tab="paket">&#128230; Paket Harga</button>
+    <button data-tab="assignment">&#128101; Assignment & Report</button>
+    <button data-tab="custom">&#9998; Custom per Reseller</button>
   </div>
 
   <div id="alertBox" class="alert"></div>
 
-  <div id="contentWrap" style="display:none;">
+  <!-- ==================== TAB 1: PAKET ==================== -->
+  <div id="tabPaket" class="tab-content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <h2 style="font-size:15px;color:#333;margin:0;">Daftar Harga Khusus</h2>
-      <button id="btnAddHarga" class="btn-primary-full" style="width:auto;margin:0;padding:10px 16px;font-size:13px;">+ Tambah Harga Khusus</button>
+      <span id="paketCount" style="font-size:13px;color:#888;">-</span>
+      <button id="btnAddPaket" class="btn-primary-full" style="width:auto;margin:0;padding:10px 16px;font-size:13px;">+ Buat Paket Baru</button>
     </div>
+    <div id="paketListWrap">
+      <div class="empty-state"><span class="spinner"></span> Memuat paket...</div>
+    </div>
+  </div>
 
-    <div id="listWrap">
+  <!-- ==================== TAB 2: ASSIGNMENT ==================== -->
+  <div id="tabAssignment" class="tab-content" style="display:none;">
+    <div class="search-bar" style="margin-bottom:12px;">
+      <input type="text" id="assignmentSearch" placeholder="Cari nama reseller / ID..." autocomplete="off">
+      <select id="assignmentFilter" style="width:auto;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+        <option value="">Semua reseller</option>
+        <option value="_with_pl">Dengan paket</option>
+        <option value="_with_custom">Dengan custom override</option>
+        <option value="_no_pl">Tanpa paket</option>
+      </select>
+      <button id="btnRefreshAssign" class="btn-secondary" style="width:auto;margin:0;padding:10px 14px;font-size:13px;">Refresh</button>
+    </div>
+    <div style="font-size:12px;color:#888;margin-bottom:8px;" id="assignCount">-</div>
+    <div id="assignmentListWrap">
       <div class="empty-state"><span class="spinner"></span> Memuat...</div>
     </div>
   </div>
 
-  <div id="emptyReseller" class="empty-state">
-    <div class="icon">&#128176;</div>
-    Pilih reseller di atas untuk mulai atur harga khusus.
+  <!-- ==================== TAB 3: CUSTOM PER RESELLER ==================== -->
+  <div id="tabCustom" class="tab-content" style="display:none;">
+    <div class="form-row" style="margin-bottom:16px;">
+      <label for="resellerInput">Pilih Reseller <span style="color:#dc3545">*</span></label>
+      <div class="autocomplete-wrap">
+        <input type="text" id="resellerInput" placeholder="Ketik nama reseller..." autocomplete="off">
+        <div class="autocomplete-list" id="resellerList" style="display:none;"></div>
+      </div>
+      <div class="hint" id="selectedInfo" style="display:none;"></div>
+    </div>
+    <div id="customContentWrap" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <h2 style="font-size:15px;color:#333;margin:0;">Daftar Harga Custom</h2>
+        <button id="btnAddCustom" class="btn-primary-full" style="width:auto;margin:0;padding:10px 16px;font-size:13px;">+ Tambah Custom Override</button>
+      </div>
+      <div id="customListWrap"></div>
+    </div>
+    <div id="customEmpty" class="empty-state">
+      <div class="icon">&#128176;</div>
+      Pilih reseller di atas untuk atur harga custom.
+    </div>
   </div>
 
   <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
 </div>
 
-<!-- MODAL: Tambah/Edit Harga Khusus -->
-<div id="modalHarga" class="modal-overlay" style="display:none;">
+<!-- ============ MODAL: Create Paket ============ -->
+<div id="modalCreatePaket" class="modal-overlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
-      <h2 id="modalTitle">Tambah Harga Khusus</h2>
-      <button class="modal-close" id="modalClose" type="button">&times;</button>
+      <h2>Buat Paket Baru</h2>
+      <button class="modal-close" id="createPaketClose" type="button">&times;</button>
     </div>
     <div class="modal-body">
-      <div class="form-row" id="rowProdukPicker">
-        <label for="produkInput">Produk <span style="color:#dc3545">*</span></label>
+      <div class="form-row">
+        <label for="cpNama">Nama Paket <span style="color:#dc3545">*</span></label>
+        <input type="text" id="cpNama" placeholder="cth: Promo Cash, Bulk 100+" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label for="cpDeskripsi">Deskripsi (opsional)</label>
+        <textarea id="cpDeskripsi" placeholder="cth: diskon cash 20% min 50 pcs" maxlength="150"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="cpSource">Sumber Harga Awal <span style="color:#dc3545">*</span></label>
+        <select id="cpSource">
+          <option value="normal">Harga Normal (default semua produk)</option>
+          <option value="price_list">Duplikat dari Paket Lain</option>
+          <option value="reseller">Duplikat dari Reseller Existing</option>
+          <option value="excel">Paste dari Excel (nama_produk TAB harga)</option>
+          <option value="empty">Kosong (isi manual nanti)</option>
+        </select>
+      </div>
+      <div class="form-row" id="cpSourcePLWrap" style="display:none;">
+        <label for="cpSourcePL">Pilih Paket Sumber</label>
+        <select id="cpSourcePL"></select>
+      </div>
+      <div class="form-row" id="cpSourceResellerWrap" style="display:none;">
+        <label for="cpSourceReseller">Pilih Reseller Sumber</label>
         <div class="autocomplete-wrap">
-          <input type="text" id="produkInput" placeholder="Ketik nama produk..." autocomplete="off">
-          <div class="autocomplete-list" id="produkList" style="display:none;"></div>
+          <input type="text" id="cpSourceReseller" placeholder="Ketik nama reseller..." autocomplete="off">
+          <div class="autocomplete-list" id="cpSourceResellerList" style="display:none;"></div>
         </div>
-        <div class="hint" id="produkInfo" style="display:none;"></div>
       </div>
-
-      <div class="form-row" id="rowProdukLocked" style="display:none;">
-        <label>Produk</label>
-        <input type="text" id="produkDisplay" readonly style="background:#f7f8fa;cursor:not-allowed;">
+      <div class="form-row" id="cpSourceExcelWrap" style="display:none;">
+        <label for="cpExcelText">Paste dari Excel (nama_produk [TAB] harga)</label>
+        <textarea id="cpExcelText" placeholder="Bolu Ketan Hitam Lumer&#9;20000&#10;Cheese Clouds Lembang&#9;45000" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
+        <div class="hint">Format: 1 baris = 1 produk, pisah dengan TAB. Baris tanpa produk valid akan dilewati.</div>
       </div>
-
-      <div class="form-row">
-        <label for="hargaInput">Harga Khusus (Rp) <span style="color:#dc3545">*</span></label>
-        <input type="number" id="hargaInput" placeholder="cth: 12500" min="1" inputmode="numeric">
-        <div class="hint" id="hargaHint"></div>
-      </div>
-
-      <div class="form-row">
-        <label for="catatanInput">Catatan (opsional)</label>
-        <textarea id="catatanInput" placeholder="cth: diskon cash bulk min 20 pcs" maxlength="150"></textarea>
-      </div>
-
-      <div id="modalAlert" class="alert"></div>
+      <div id="cpAlert" class="alert"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" id="modalCancel" type="button">Batal</button>
-      <button class="btn-primary-full" id="modalSubmit" type="button" style="flex:1;margin:0;">Simpan</button>
+      <button class="btn-secondary" id="createPaketCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="createPaketSubmit" type="button" style="flex:1;margin:0;">Buat Paket</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Matrix Paket Detail ============ -->
+<div id="modalMatrix" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:900px;">
+    <div class="modal-header">
+      <div style="flex:1;min-width:0;">
+        <h2 id="matrixTitle">-</h2>
+        <div id="matrixSubtitle" style="font-size:11px;color:#888;font-family:monospace;margin-top:2px;"></div>
+      </div>
+      <button class="modal-close" id="matrixClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:12px 16px;">
+      <div class="search-bar" style="margin-bottom:10px;">
+        <input type="text" id="matrixSearch" placeholder="Cari produk..." autocomplete="off">
+        <button id="matrixBtnBulk" class="btn-secondary" style="width:auto;margin:0;padding:10px 14px;font-size:12px;">Paste Excel</button>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:8px;" id="matrixCount">-</div>
+      <div id="matrixWrap" style="max-height:55vh;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="matrixClose2" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Bulk Paste Excel ============ -->
+<div id="modalBulk" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Paste Harga dari Excel</h2>
+      <button class="modal-close" id="bulkClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:#666;margin-bottom:10px;">Paste dari Excel dengan format: <b>nama_produk [TAB] harga</b>. Baris tanpa produk valid akan dilewati.</p>
+      <textarea id="bulkText" placeholder="Bolu Ketan Hitam Lumer&#9;20000&#10;Cheese Clouds Lembang&#9;45000" style="min-height:150px;font-family:monospace;font-size:12px;width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;"></textarea>
+      <div id="bulkAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="bulkCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="bulkSubmit" type="button" style="flex:1;margin:0;">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Assign ke Reseller ============ -->
+<div id="modalAssign" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Assign Paket</h2>
+      <button class="modal-close" id="assignClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;margin-bottom:10px;">Reseller: <b id="assignResellerName">-</b></p>
+      <div class="form-row">
+        <label for="assignSelect">Pilih Paket</label>
+        <select id="assignSelect"></select>
+      </div>
+      <div id="assignAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="assignCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="assignSubmit" type="button" style="flex:1;margin:0;">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Custom Override ============ -->
+<div id="modalCustom" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="customModalTitle">Tambah Custom Override</h2>
+      <button class="modal-close" id="customModalClose" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row" id="customRowProdukPicker">
+        <label for="customProdukInput">Produk <span style="color:#dc3545">*</span></label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="customProdukInput" placeholder="Ketik nama produk..." autocomplete="off">
+          <div class="autocomplete-list" id="customProdukList" style="display:none;"></div>
+        </div>
+        <div class="hint" id="customProdukInfo" style="display:none;"></div>
+      </div>
+      <div class="form-row" id="customRowProdukLocked" style="display:none;">
+        <label>Produk</label>
+        <input type="text" id="customProdukDisplay" readonly style="background:#f7f8fa;cursor:not-allowed;">
+      </div>
+      <div class="form-row">
+        <label for="customHargaInput">Harga Custom (Rp) <span style="color:#dc3545">*</span></label>
+        <input type="number" id="customHargaInput" placeholder="cth: 12500" min="1" inputmode="numeric">
+        <div class="hint" id="customHargaHint"></div>
+      </div>
+      <div class="form-row">
+        <label for="customCatatanInput">Catatan (opsional)</label>
+        <textarea id="customCatatanInput" placeholder="cth: harga khusus langganan" maxlength="150"></textarea>
+      </div>
+      <div id="customModalAlert" class="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="customModalCancel" type="button">Batal</button>
+      <button class="btn-primary-full" id="customModalSubmit" type="button" style="flex:1;margin:0;">Simpan</button>
     </div>
   </div>
 </div>
@@ -113,28 +258,167 @@ function showAlert(msg, type) {
   clearTimeout(b._t);
   b._t = setTimeout(function() { b.className = 'alert'; }, 3500);
 }
-function showModalAlert(msg) {
-  var b = document.getElementById('modalAlert');
-  b.className = 'alert alert-error show';
-  b.textContent = msg;
-}
 
 var currentUser = null;
-var selectedReseller = null; // { id, nama }
+var priceLists = [];
 var allResellers = [];
 var allProduk = [];
-var hargaList = [];
-var modalMode = 'create'; // 'create' | 'edit'
-var modalEditing = null; // { nama_produk, harga_khusus }
+var assignments = [];
 
-// ============ RESELLER AUTOCOMPLETE ============
-function renderResellerList(q) {
-  var list = document.getElementById('resellerList');
+var currentCustomReseller = null;
+var customList = [];
+var currentMatrixPL = null;
+var currentMatrixItems = [];
+var matrixFilter = '';
+var currentBulkPL = null;
+
+var createPaketSourceReseller = null;
+
+// ============ TAB SWITCHING ============
+document.querySelectorAll('#mainTabs button').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#mainTabs button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var tab = btn.dataset.tab;
+    document.getElementById('tabPaket').style.display = tab === 'paket' ? 'block' : 'none';
+    document.getElementById('tabAssignment').style.display = tab === 'assignment' ? 'block' : 'none';
+    document.getElementById('tabCustom').style.display = tab === 'custom' ? 'block' : 'none';
+    if (tab === 'paket') loadPriceLists();
+    else if (tab === 'assignment') loadAssignments();
+  });
+});
+
+// ============ TAB 1: PAKET ============
+async function loadPriceLists() {
+  var wrap = document.getElementById('paketListWrap');
+  wrap.innerHTML = '<div class="empty-state"><span class="spinner"></span> Memuat paket...</div>';
+  var r = await KK22_API.getPriceLists();
+  if (!r.ok) {
+    wrap.innerHTML = '<div class="empty-state">Gagal: ' + esc(r.error) + '</div>';
+    return;
+  }
+  priceLists = r.data.items || [];
+  document.getElementById('paketCount').textContent = priceLists.length + ' paket';
+  renderPriceLists();
+}
+
+function renderPriceLists() {
+  var wrap = document.getElementById('paketListWrap');
+  if (priceLists.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">&#128230;</div>Belum ada paket harga.<br><span style="font-size:12px;">Klik "+ Buat Paket Baru" untuk mulai.</span></div>';
+    return;
+  }
+  var html = '';
+  priceLists.forEach(function(pl) {
+    var badge = pl.aktif
+      ? '<span class="badge" style="background:#d4edda;color:#155724;font-size:10px;">aktif</span>'
+      : '<span class="badge" style="background:#e2e3e5;color:#383d41;font-size:10px;">nonaktif</span>';
+    html += '<div class="paket-card" data-id="' + esc(pl.id_price_list) + '">';
+    html += '<div class="paket-head">';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div class="paket-nama">' + esc(pl.nama_paket) + ' ' + badge + '</div>';
+    html += '<div class="paket-id">' + esc(pl.id_price_list) + '</div>';
+    if (pl.deskripsi) html += '<div class="paket-desc">' + esc(pl.deskripsi) + '</div>';
+    html += '</div>';
+    html += '<div class="paket-count">' + pl.total_item + ' produk</div>';
+    html += '</div>';
+    html += '<div class="paket-actions">';
+    html += '<button class="btn-view-paket" data-id="' + esc(pl.id_price_list) + '" style="background:#d1ecf1;color:#0c5460;">&#128065; Lihat & Edit</button>';
+    html += '<button class="btn-rename-paket" data-id="' + esc(pl.id_price_list) + '" data-nama="' + esc(pl.nama_paket) + '" style="background:#fff3cd;color:#856404;">&#9998; Rename</button>';
+    html += '<button class="btn-toggle-paket" data-id="' + esc(pl.id_price_list) + '" data-aktif="' + (pl.aktif ? 'true' : 'false') + '" style="background:' + (pl.aktif ? '#e2e3e5' : '#d4edda') + ';color:' + (pl.aktif ? '#383d41' : '#155724') + ';">' + (pl.aktif ? 'Nonaktifkan' : 'Aktifkan') + '</button>';
+    html += '<button class="btn-del-paket" data-id="' + esc(pl.id_price_list) + '" style="background:#f8d7da;color:#721c24;">&#128465;</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.btn-view-paket').forEach(function(btn) {
+    btn.addEventListener('click', function() { openMatrix(btn.dataset.id); });
+  });
+  wrap.querySelectorAll('.btn-rename-paket').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var namaBaru = prompt('Rename paket:', btn.dataset.nama);
+      if (!namaBaru || namaBaru === btn.dataset.nama) return;
+      doRenamePaket(btn.dataset.id, namaBaru);
+    });
+  });
+  wrap.querySelectorAll('.btn-toggle-paket').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var targetAktif = btn.dataset.aktif !== 'true';
+      doTogglePaket(btn.dataset.id, targetAktif);
+    });
+  });
+  wrap.querySelectorAll('.btn-del-paket').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm('Hapus paket ini? Semua item harga di dalamnya juga dihapus.')) return;
+      doDeletePaket(btn.dataset.id);
+    });
+  });
+}
+
+async function doRenamePaket(id, namaBaru) {
+  var r = await KK22_API.renamePriceList(id, namaBaru);
+  if (!r.ok) { showAlert(r.error || 'Gagal rename.', 'error'); return; }
+  showAlert('Nama paket diupdate.', 'success');
+  await loadPriceLists();
+}
+
+async function doTogglePaket(id, aktif) {
+  var r = await KK22_API.togglePriceListAktif(id, aktif);
+  if (!r.ok) { showAlert(r.error || 'Gagal toggle.', 'error'); return; }
+  showAlert('Status paket diubah.', 'success');
+  await loadPriceLists();
+}
+
+async function doDeletePaket(id) {
+  var r = await KK22_API.deletePriceList(id);
+  if (!r.ok) { showAlert(r.error || 'Gagal hapus.', 'error'); return; }
+  showAlert('Paket dihapus.', 'success');
+  await loadPriceLists();
+}
+
+// ============ CREATE PAKET MODAL ============
+document.getElementById('btnAddPaket').addEventListener('click', function() {
+  document.getElementById('cpNama').value = '';
+  document.getElementById('cpDeskripsi').value = '';
+  document.getElementById('cpSource').value = 'normal';
+  document.getElementById('cpSourcePLWrap').style.display = 'none';
+  document.getElementById('cpSourceResellerWrap').style.display = 'none';
+  document.getElementById('cpSourceExcelWrap').style.display = 'none';
+  document.getElementById('cpExcelText').value = '';
+  document.getElementById('cpSourceReseller').value = '';
+  document.getElementById('cpAlert').className = 'alert';
+  createPaketSourceReseller = null;
+  var sel = document.getElementById('cpSourcePL');
+  sel.innerHTML = '<option value="">-- Pilih Paket --</option>';
+  priceLists.forEach(function(pl) {
+    sel.innerHTML += '<option value="' + esc(pl.id_price_list) + '">' + esc(pl.nama_paket) + ' (' + pl.total_item + ' produk)</option>';
+  });
+  document.getElementById('modalCreatePaket').style.display = 'flex';
+});
+document.getElementById('createPaketClose').addEventListener('click', function() { document.getElementById('modalCreatePaket').style.display = 'none'; });
+document.getElementById('createPaketCancel').addEventListener('click', function() { document.getElementById('modalCreatePaket').style.display = 'none'; });
+
+document.getElementById('cpSource').addEventListener('change', function() {
+  var v = this.value;
+  document.getElementById('cpSourcePLWrap').style.display = v === 'price_list' ? 'block' : 'none';
+  document.getElementById('cpSourceResellerWrap').style.display = v === 'reseller' ? 'block' : 'none';
+  document.getElementById('cpSourceExcelWrap').style.display = v === 'excel' ? 'block' : 'none';
+});
+
+document.getElementById('cpSourceReseller').addEventListener('focus', function() {
+  renderCpSourceResellerList(this.value);
+});
+document.getElementById('cpSourceReseller').addEventListener('input', function() {
+  renderCpSourceResellerList(this.value);
+});
+
+function renderCpSourceResellerList(q) {
+  var list = document.getElementById('cpSourceResellerList');
   var ql = String(q || '').trim().toLowerCase();
-  var filtered = !ql ? allResellers.slice(0, 50) : allResellers.filter(function(x) {
-    return String(x[1] || '').toLowerCase().indexOf(ql) !== -1;
-  }).slice(0, 50);
-
+  var filtered = !ql ? allResellers.slice(0, 30) : allResellers.filter(function(x) {
+    return String(x[1]).toLowerCase().indexOf(ql) !== -1;
+  }).slice(0, 30);
   if (filtered.length === 0) {
     list.innerHTML = '<div class="empty">Tidak ada reseller cocok</div>';
   } else {
@@ -148,46 +432,351 @@ function renderResellerList(q) {
     list.innerHTML = html;
     list.querySelectorAll('.item').forEach(function(el) {
       el.addEventListener('click', function() {
-        selectReseller(el.dataset.id, el.dataset.nama);
+        createPaketSourceReseller = { id: el.dataset.id, nama: el.dataset.nama };
+        document.getElementById('cpSourceReseller').value = el.dataset.nama;
+        list.style.display = 'none';
       });
     });
   }
   list.style.display = 'block';
 }
 
-function selectReseller(id, nama) {
-  selectedReseller = { id: id, nama: nama };
-  document.getElementById('resellerInput').value = nama;
-  document.getElementById('resellerList').style.display = 'none';
-  var info = document.getElementById('selectedInfo');
-  info.style.display = 'block';
-  info.innerHTML = 'Reseller dipilih: <b>' + esc(nama) + '</b> (' + esc(id) + ')';
-  document.getElementById('emptyReseller').style.display = 'none';
-  document.getElementById('contentWrap').style.display = 'block';
-  loadHargaList();
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#cpSourceReseller') && !e.target.closest('#cpSourceResellerList')) {
+    document.getElementById('cpSourceResellerList').style.display = 'none';
+  }
+});
+
+document.getElementById('createPaketSubmit').addEventListener('click', async function() {
+  var nama = document.getElementById('cpNama').value.trim();
+  var deskripsi = document.getElementById('cpDeskripsi').value.trim();
+  var source = document.getElementById('cpSource').value;
+  if (!nama) { showCpAlert('Nama paket wajib diisi.'); return; }
+
+  var sourceId = '';
+  var items = null;
+  if (source === 'price_list') {
+    sourceId = document.getElementById('cpSourcePL').value;
+    if (!sourceId) { showCpAlert('Pilih paket sumber.'); return; }
+  } else if (source === 'reseller') {
+    if (!createPaketSourceReseller) { showCpAlert('Pilih reseller sumber.'); return; }
+    sourceId = createPaketSourceReseller.id;
+  } else if (source === 'excel') {
+    var txt = document.getElementById('cpExcelText').value.trim();
+    if (!txt) { showCpAlert('Paste data Excel dulu.'); return; }
+    items = parseExcelText(txt);
+    if (items.length === 0) { showCpAlert('Tidak ada item valid dari Excel.'); return; }
+  }
+
+  var btn = this;
+  btn.disabled = true; var orig = btn.textContent;
+  btn.textContent = 'Membuat...';
+  var r = await KK22_API.createPriceList(nama, deskripsi, source, sourceId, items);
+  btn.disabled = false; btn.textContent = orig;
+  if (!r.ok) { showCpAlert(r.error || 'Gagal create.'); return; }
+
+  var newId = r.data.id_price_list;
+  var confirmRename = confirm('Paket dibuat dengan ID otomatis:\n\n  ' + newId + '\n\nApakah mau ganti nama paket?\n(Klik OK untuk rename, Cancel untuk tetap)');
+  if (confirmRename) {
+    var namaBaru = prompt('Nama paket baru:', nama);
+    if (namaBaru && namaBaru !== nama) {
+      await KK22_API.renamePriceList(newId, namaBaru);
+    }
+  }
+  document.getElementById('modalCreatePaket').style.display = 'none';
+  showAlert('Paket berhasil dibuat: ' + newId + ' (' + r.data.total_item + ' produk).', 'success');
+  await loadPriceLists();
+});
+
+function showCpAlert(msg) {
+  var b = document.getElementById('cpAlert');
+  b.className = 'alert alert-error show';
+  b.textContent = msg;
 }
 
-// ============ HARGA LIST ============
-async function loadHargaList() {
-  if (!selectedReseller) return;
-  document.getElementById('listWrap').innerHTML = '<div class="empty-state"><span class="spinner"></span> Memuat...</div>';
-  var r = await KK22_API.getHargaKhusus(selectedReseller.id);
+function parseExcelText(txt) {
+  var lines = txt.split(/\r?\n/);
+  var items = [];
+  lines.forEach(function(line) {
+    if (!line.trim()) return;
+    var parts = line.split('\t');
+    if (parts.length < 2) parts = line.split(/\s{2,}/); // fallback multiple spaces
+    if (parts.length < 2) return;
+    var nama = parts[0].trim();
+    var hargaStr = parts[1].trim().replace(/[^0-9]/g, '');
+    var harga = Number(hargaStr);
+    if (!nama || !harga || harga <= 0) return;
+    items.push({ nama_produk: nama, harga: harga });
+  });
+  return items;
+}
+
+// ============ MATRIX ============
+async function openMatrix(idPL) {
+  currentMatrixPL = idPL;
+  matrixFilter = '';
+  document.getElementById('matrixSearch').value = '';
+  document.getElementById('matrixWrap').innerHTML = '<div class="empty-state"><span class="spinner"></span> Memuat...</div>';
+  document.getElementById('modalMatrix').style.display = 'flex';
+  await loadMatrix();
+}
+
+async function loadMatrix() {
+  var r = await KK22_API.getPriceListDetail(currentMatrixPL);
   if (!r.ok) {
-    document.getElementById('listWrap').innerHTML = '<div class="empty-state">Gagal: ' + esc(r.error) + '</div>';
+    document.getElementById('matrixWrap').innerHTML = '<div class="empty-state">Gagal: ' + esc(r.error) + '</div>';
     return;
   }
-  hargaList = r.data.items || [];
-  renderHargaList();
+  currentMatrixItems = r.data.items || [];
+  document.getElementById('matrixTitle').textContent = r.data.header.nama_paket;
+  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' · ' + currentMatrixItems.length + ' produk';
+  renderMatrix();
 }
 
-function renderHargaList() {
-  var wrap = document.getElementById('listWrap');
-  if (hargaList.length === 0) {
-    wrap.innerHTML = '<div class="empty-state" style="padding:30px 20px;"><div class="icon">&#128176;</div>Belum ada harga khusus untuk reseller ini.<br><span style="font-size:12px;">Klik "+ Tambah Harga Khusus" untuk mulai.</span></div>';
+function renderMatrix() {
+  var q = matrixFilter.toLowerCase();
+  var filtered = currentMatrixItems.filter(function(it) {
+    return !q || String(it.nama_produk).toLowerCase().indexOf(q) !== -1;
+  });
+  document.getElementById('matrixCount').textContent = filtered.length + ' dari ' + currentMatrixItems.length + ' produk';
+  if (filtered.length === 0) {
+    document.getElementById('matrixWrap').innerHTML = '<div class="empty-state">Tidak ada produk cocok.</div>';
     return;
   }
-  var html = '<div class="harga-list">';
-  hargaList.forEach(function(it) {
+  var html = '<div class="matrix-list">';
+  filtered.forEach(function(it) {
+    var isSet = it.harga_paket > 0;
+    var hargaPaket = isSet ? it.harga_paket : 0;
+    var selisih = it.harga_default - hargaPaket;
+    var selisihLabel = isSet && selisih !== 0
+      ? '<span class="matrix-selisih ' + (selisih > 0 ? 'lebih-murah' : 'lebih-mahal') + '">' + (selisih > 0 ? '-' : '+') + rp(Math.abs(selisih)) + '</span>'
+      : '';
+    html += '<div class="matrix-row" data-nama="' + esc(it.nama_produk) + '">';
+    html += '<div class="matrix-info">';
+    html += '<div class="matrix-nama">' + esc(it.nama_produk) + '</div>';
+    html += '<div class="matrix-default">Default: ' + rp(it.harga_default) + ' ' + selisihLabel + '</div>';
+    html += '</div>';
+    html += '<div class="matrix-input-wrap">';
+    html += '<input type="number" class="matrix-input" min="0" placeholder="-" value="' + (isSet ? hargaPaket : '') + '" data-nama="' + esc(it.nama_produk) + '">';
+    html += '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  document.getElementById('matrixWrap').innerHTML = html;
+
+  document.querySelectorAll('.matrix-input').forEach(function(inp) {
+    inp.addEventListener('change', async function() {
+      var nama = inp.dataset.nama;
+      var harga = Number(inp.value);
+      if (!harga || harga <= 0) return;
+      inp.disabled = true;
+      var r = await KK22_API.setPriceListItem(currentMatrixPL, nama, harga);
+      inp.disabled = false;
+      if (!r.ok) { showAlert(r.error || 'Gagal simpan.', 'error'); return; }
+      var item = currentMatrixItems.find(function(x) { return x.nama_produk === nama; });
+      if (item) item.harga_paket = harga;
+      showAlert('Harga ' + nama + ' diupdate.', 'success');
+      renderMatrix();
+    });
+  });
+}
+
+document.getElementById('matrixSearch').addEventListener('input', function() {
+  matrixFilter = this.value;
+  renderMatrix();
+});
+document.getElementById('matrixClose').addEventListener('click', function() { document.getElementById('modalMatrix').style.display = 'none'; });
+document.getElementById('matrixClose2').addEventListener('click', function() { document.getElementById('modalMatrix').style.display = 'none'; });
+
+document.getElementById('matrixBtnBulk').addEventListener('click', function() {
+  currentBulkPL = currentMatrixPL;
+  document.getElementById('bulkText').value = '';
+  document.getElementById('bulkAlert').className = 'alert';
+  document.getElementById('modalBulk').style.display = 'flex';
+});
+
+// ============ BULK PASTE ============
+document.getElementById('bulkClose').addEventListener('click', function() { document.getElementById('modalBulk').style.display = 'none'; });
+document.getElementById('bulkCancel').addEventListener('click', function() { document.getElementById('modalBulk').style.display = 'none'; });
+
+document.getElementById('bulkSubmit').addEventListener('click', async function() {
+  var txt = document.getElementById('bulkText').value.trim();
+  if (!txt) { showBulkAlert('Paste data dulu.'); return; }
+  var items = parseExcelText(txt);
+  if (items.length === 0) { showBulkAlert('Tidak ada item valid. Format: nama_produk TAB harga.'); return; }
+  var btn = this;
+  btn.disabled = true; var orig = btn.textContent;
+  btn.textContent = 'Menyimpan...';
+  var r = await KK22_API.bulkSetPriceListItems(currentBulkPL, items);
+  btn.disabled = false; btn.textContent = orig;
+  if (!r.ok) { showBulkAlert(r.error || 'Gagal simpan.'); return; }
+  document.getElementById('modalBulk').style.display = 'none';
+  showAlert('Bulk: updated=' + r.data.updated + ', created=' + r.data.created, 'success');
+  await loadMatrix();
+});
+
+function showBulkAlert(msg) {
+  var b = document.getElementById('bulkAlert');
+  b.className = 'alert alert-error show';
+  b.textContent = msg;
+}
+
+// ============ TAB 2: ASSIGNMENT ============
+async function loadAssignments() {
+  var wrap = document.getElementById('assignmentListWrap');
+  wrap.innerHTML = '<div class="empty-state"><span class="spinner"></span> Memuat...</div>';
+  var r = await KK22_API.getResellerAssignments();
+  if (!r.ok) {
+    wrap.innerHTML = '<div class="empty-state">Gagal: ' + esc(r.error) + '</div>';
+    return;
+  }
+  assignments = r.data.items || [];
+  renderAssignments();
+}
+
+function renderAssignments() {
+  var q = document.getElementById('assignmentSearch').value.trim().toLowerCase();
+  var filter = document.getElementById('assignmentFilter').value;
+  var filtered = assignments.filter(function(a) {
+    if (q) {
+      var hay = (String(a.nama_reseller) + ' ' + String(a.id_reseller)).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    if (filter === '_with_pl' && !a.id_price_list) return false;
+    if (filter === '_with_custom' && a.custom_override_count === 0) return false;
+    if (filter === '_no_pl' && a.id_price_list) return false;
+    return true;
+  });
+  document.getElementById('assignCount').textContent = filtered.length + ' dari ' + assignments.length + ' reseller';
+  var wrap = document.getElementById('assignmentListWrap');
+  if (filtered.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">Tidak ada data.</div>';
+    return;
+  }
+  var html = '<div class="assign-list">';
+  filtered.slice(0, 200).forEach(function(a) {
+    var plLabel = a.id_price_list ? ('<span class="badge" style="background:#cce5ff;color:#004085;font-size:10px;">' + esc(a.nama_paket) + '</span>') : '<span style="color:#aaa;font-size:11px;">(normal)</span>';
+    var customBadge = a.custom_override_count > 0 ? ('<span class="badge" style="background:#fff3cd;color:#856404;font-size:10px;">' + a.custom_override_count + ' custom</span>') : '';
+    html += '<div class="assign-row">';
+    html += '<div class="assign-info">';
+    html += '<div class="assign-nama">' + esc(a.nama_reseller) + '</div>';
+    html += '<div class="assign-id">' + esc(a.id_reseller) + ' ' + plLabel + ' ' + customBadge + '</div>';
+    html += '</div>';
+    html += '<button class="assign-btn" data-id="' + esc(a.id_reseller) + '" data-nama="' + esc(a.nama_reseller) + '" data-pl="' + esc(a.id_price_list) + '">' + (a.id_price_list ? 'Ganti' : 'Assign') + '</button>';
+    html += '</div>';
+  });
+  html += '</div>';
+  if (filtered.length > 200) html += '<div style="font-size:12px;color:#888;text-align:center;padding:8px;">... dan ' + (filtered.length - 200) + ' lainnya. Gunakan search untuk filter.</div>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.assign-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      openAssignModal(btn.dataset.id, btn.dataset.nama, btn.dataset.pl);
+    });
+  });
+}
+
+document.getElementById('assignmentSearch').addEventListener('input', renderAssignments);
+document.getElementById('assignmentFilter').addEventListener('change', renderAssignments);
+document.getElementById('btnRefreshAssign').addEventListener('click', loadAssignments);
+
+var currentAssignReseller = null;
+function openAssignModal(idR, namaR, currentPL) {
+  currentAssignReseller = { id: idR, nama: namaR };
+  document.getElementById('assignResellerName').textContent = namaR + ' (' + idR + ')';
+  var sel = document.getElementById('assignSelect');
+  sel.innerHTML = '<option value="">-- Tidak pakai paket (harga normal) --</option>';
+  priceLists.forEach(function(pl) {
+    if (!pl.aktif && pl.id_price_list !== currentPL) return;
+    sel.innerHTML += '<option value="' + esc(pl.id_price_list) + '">' + esc(pl.nama_paket) + ' (' + pl.total_item + ' produk)' + (!pl.aktif ? ' [NONAKTIF]' : '') + '</option>';
+  });
+  sel.value = currentPL || '';
+  document.getElementById('assignAlert').className = 'alert';
+  document.getElementById('modalAssign').style.display = 'flex';
+}
+document.getElementById('assignClose').addEventListener('click', function() { document.getElementById('modalAssign').style.display = 'none'; });
+document.getElementById('assignCancel').addEventListener('click', function() { document.getElementById('modalAssign').style.display = 'none'; });
+
+document.getElementById('assignSubmit').addEventListener('click', async function() {
+  if (!currentAssignReseller) return;
+  var idPL = document.getElementById('assignSelect').value;
+  var btn = this;
+  btn.disabled = true; var orig = btn.textContent;
+  btn.textContent = 'Menyimpan...';
+  var r = await KK22_API.assignPriceListToReseller(currentAssignReseller.id, idPL);
+  btn.disabled = false; btn.textContent = orig;
+  if (!r.ok) {
+    var b = document.getElementById('assignAlert');
+    b.className = 'alert alert-error show';
+    b.textContent = r.error || 'Gagal assign.';
+    return;
+  }
+  document.getElementById('modalAssign').style.display = 'none';
+  showAlert('Paket reseller diupdate.', 'success');
+  await loadAssignments();
+});
+
+// ============ TAB 3: CUSTOM ============
+function renderResellerList(q) {
+  var list = document.getElementById('resellerList');
+  var ql = String(q || '').trim().toLowerCase();
+  var filtered = !ql ? allResellers.slice(0, 50) : allResellers.filter(function(x) {
+    return String(x[1]).toLowerCase().indexOf(ql) !== -1;
+  }).slice(0, 50);
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Tidak ada reseller cocok</div>';
+  } else {
+    var html = '';
+    filtered.forEach(function(x) {
+      html += '<div class="item" data-id="' + esc(x[0]) + '" data-nama="' + esc(x[1]) + '">';
+      html += '<span class="name">' + esc(x[1]) + '</span>';
+      html += '<span class="id">' + esc(x[0]) + '</span>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+    list.querySelectorAll('.item').forEach(function(el) {
+      el.addEventListener('click', function() {
+        currentCustomReseller = { id: el.dataset.id, nama: el.dataset.nama };
+        document.getElementById('resellerInput').value = el.dataset.nama;
+        list.style.display = 'none';
+        var info = document.getElementById('selectedInfo');
+        info.style.display = 'block';
+        info.innerHTML = 'Reseller dipilih: <b>' + esc(el.dataset.nama) + '</b> (' + esc(el.dataset.id) + ')';
+        document.getElementById('customEmpty').style.display = 'none';
+        document.getElementById('customContentWrap').style.display = 'block';
+        loadCustomList();
+      });
+    });
+  }
+  list.style.display = 'block';
+}
+
+document.getElementById('resellerInput').addEventListener('focus', function() { renderResellerList(this.value); });
+document.getElementById('resellerInput').addEventListener('input', function() { renderResellerList(this.value); });
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#resellerInput') && !e.target.closest('#resellerList')) {
+    document.getElementById('resellerList').style.display = 'none';
+  }
+});
+
+async function loadCustomList() {
+  if (!currentCustomReseller) return;
+  var wrap = document.getElementById('customListWrap');
+  wrap.innerHTML = '<div class="empty-state"><span class="spinner"></span> Memuat...</div>';
+  var r = await KK22_API.getHargaKhusus(currentCustomReseller.id);
+  if (!r.ok) { wrap.innerHTML = '<div class="empty-state">Gagal: ' + esc(r.error) + '</div>'; return; }
+  customList = r.data.items || [];
+  renderCustomList();
+}
+
+function renderCustomList() {
+  var wrap = document.getElementById('customListWrap');
+  if (customList.length === 0) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:24px;"><div class="icon">&#128176;</div>Belum ada custom override.</div>';
+    return;
+  }
+  var html = '';
+  customList.forEach(function(it) {
     html += '<div class="harga-card">';
     html += '<div class="harga-info">';
     html += '<div class="harga-nama">' + esc(it.nama_produk) + '</div>';
@@ -195,83 +784,59 @@ function renderHargaList() {
     html += '</div>';
     html += '<div class="harga-value">' + rp(it.harga_khusus) + '</div>';
     html += '<div class="harga-actions">';
-    html += '<button class="btn-edit-harga" data-nama="' + esc(it.nama_produk) + '" data-harga="' + it.harga_khusus + '" data-catatan="' + esc(it.catatan) + '">&#9998;</button>';
+    html += '<button class="btn-edit-harga" data-nama="' + esc(it.nama_produk) + '" data-harga="' + it.harga_khusus + '" data-catatan="' + esc(it.catatan || '') + '">&#9998;</button>';
     html += '<button class="btn-del-harga" data-nama="' + esc(it.nama_produk) + '">&#128465;</button>';
-    html += '</div>';
-    html += '</div>';
+    html += '</div></div>';
   });
-  html += '</div>';
   wrap.innerHTML = html;
-
   wrap.querySelectorAll('.btn-edit-harga').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      openModalEdit(btn.dataset.nama, Number(btn.dataset.harga), btn.dataset.catatan);
-    });
+    btn.addEventListener('click', function() { openCustomModal('edit', btn.dataset.nama, Number(btn.dataset.harga), btn.dataset.catatan); });
   });
   wrap.querySelectorAll('.btn-del-harga').forEach(function(btn) {
     btn.addEventListener('click', async function() {
-      var nama = btn.dataset.nama;
-      if (!confirm('Hapus harga khusus "' + nama + '"?\n\nHarga default akan kembali dipakai untuk produk ini.')) return;
-      btn.disabled = true;
-      var r = await KK22_API.deleteHargaKhusus(selectedReseller.id, nama);
-      btn.disabled = false;
+      if (!confirm('Hapus custom override "' + btn.dataset.nama + '"?')) return;
+      var r = await KK22_API.deleteHargaKhusus(currentCustomReseller.id, btn.dataset.nama);
       if (!r.ok) { showAlert(r.error || 'Gagal hapus.', 'error'); return; }
-      showAlert('Harga khusus dihapus.', 'success');
-      await loadHargaList();
+      showAlert('Custom override dihapus.', 'success');
+      await loadCustomList();
     });
   });
 }
 
-// ============ MODAL TAMBAH/EDIT ============
-function openModalCreate() {
-  modalMode = 'create';
-  modalEditing = null;
-  document.getElementById('modalTitle').textContent = 'Tambah Harga Khusus';
-  document.getElementById('rowProdukPicker').style.display = '';
-  document.getElementById('rowProdukLocked').style.display = 'none';
-  document.getElementById('produkInput').value = '';
-  document.getElementById('produkInfo').style.display = 'none';
-  document.getElementById('hargaInput').value = '';
-  document.getElementById('hargaHint').textContent = '';
-  document.getElementById('catatanInput').value = '';
-  document.getElementById('modalAlert').className = 'alert';
-  document.getElementById('modalHarga').style.display = 'flex';
-  setTimeout(function() { document.getElementById('produkInput').focus(); }, 100);
+var customModalMode = 'create';
+var customModalEditing = null;
+document.getElementById('btnAddCustom').addEventListener('click', function() { openCustomModal('create'); });
+document.getElementById('customModalClose').addEventListener('click', function() { document.getElementById('modalCustom').style.display = 'none'; });
+document.getElementById('customModalCancel').addEventListener('click', function() { document.getElementById('modalCustom').style.display = 'none'; });
+
+function openCustomModal(mode, nama, harga, catatan) {
+  customModalMode = mode;
+  customModalEditing = (mode === 'edit') ? { nama_produk: nama } : null;
+  document.getElementById('customModalTitle').textContent = mode === 'create' ? 'Tambah Custom Override' : 'Edit Custom Override';
+  document.getElementById('customRowProdukPicker').style.display = mode === 'create' ? 'block' : 'none';
+  document.getElementById('customRowProdukLocked').style.display = mode === 'edit' ? 'block' : 'none';
+  document.getElementById('customProdukInput').value = '';
+  document.getElementById('customProdukDisplay').value = mode === 'edit' ? nama : '';
+  document.getElementById('customProdukInfo').style.display = 'none';
+  document.getElementById('customHargaInput').value = mode === 'edit' ? harga : '';
+  document.getElementById('customHargaHint').textContent = '';
+  document.getElementById('customCatatanInput').value = catatan || '';
+  document.getElementById('customModalAlert').className = 'alert';
+  document.getElementById('modalCustom').style.display = 'flex';
 }
 
-function openModalEdit(nama, harga, catatan) {
-  modalMode = 'edit';
-  modalEditing = { nama_produk: nama, harga_khusus: harga };
-  document.getElementById('modalTitle').textContent = 'Edit Harga Khusus';
-  document.getElementById('rowProdukPicker').style.display = 'none';
-  document.getElementById('rowProdukLocked').style.display = '';
-  document.getElementById('produkDisplay').value = nama;
-  document.getElementById('hargaInput').value = harga;
-  document.getElementById('hargaHint').textContent = '';
-  document.getElementById('catatanInput').value = catatan || '';
-  document.getElementById('modalAlert').className = 'alert';
-  document.getElementById('modalHarga').style.display = 'flex';
-  setTimeout(function() { document.getElementById('hargaInput').focus(); }, 100);
-}
-
-function closeModal() {
-  document.getElementById('modalHarga').style.display = 'none';
-}
-
-function renderProdukPickerList(q) {
-  var list = document.getElementById('produkList');
+function renderCustomProdukList(q) {
+  var list = document.getElementById('customProdukList');
   var ql = String(q || '').trim().toLowerCase();
-  var existingNames = {};
-  hargaList.forEach(function(it) { existingNames[String(it.nama_produk).toLowerCase()] = true; });
+  var existing = {};
+  customList.forEach(function(it) { existing[String(it.nama_produk).toLowerCase()] = true; });
   var filtered = allProduk.filter(function(p) {
     if (!p.aktif) return false;
-    if (existingNames[String(p.nama_produk).toLowerCase()]) return false; // exclude yang sudah ada
-    if (ql && String(p.nama_produk || '').toLowerCase().indexOf(ql) === -1) return false;
-    return true;
+    if (existing[String(p.nama_produk).toLowerCase()]) return false;
+    return !ql || String(p.nama_produk || '').toLowerCase().indexOf(ql) !== -1;
   }).slice(0, 50);
-
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty">Tidak ada produk cocok (atau sudah punya harga khusus)</div>';
+    list.innerHTML = '<div class="empty">Tidak ada produk cocok (atau sudah punya custom).</div>';
   } else {
     var html = '';
     filtered.forEach(function(p) {
@@ -283,80 +848,50 @@ function renderProdukPickerList(q) {
     list.innerHTML = html;
     list.querySelectorAll('.item').forEach(function(el) {
       el.addEventListener('click', function() {
-        document.getElementById('produkInput').value = el.dataset.nama;
-        document.getElementById('produkList').style.display = 'none';
-        var harga = Number(el.dataset.harga) || 0;
-        var info = document.getElementById('produkInfo');
+        document.getElementById('customProdukInput').value = el.dataset.nama;
+        list.style.display = 'none';
+        var info = document.getElementById('customProdukInfo');
         info.style.display = 'block';
-        info.innerHTML = 'Harga default: <b>' + rp(harga) + '</b>';
-        document.getElementById('hargaHint').textContent = 'Harga default: ' + rp(harga);
+        info.innerHTML = 'Harga default: <b>' + rp(el.dataset.harga) + '</b>';
+        document.getElementById('customHargaHint').textContent = 'Harga default: ' + rp(el.dataset.harga);
       });
     });
   }
   list.style.display = 'block';
 }
-
-// ============ EVENT HANDLERS ============
-document.getElementById('resellerInput').addEventListener('focus', function() {
-  renderResellerList(this.value);
-});
-document.getElementById('resellerInput').addEventListener('click', function() {
-  renderResellerList(this.value);
-});
-document.getElementById('resellerInput').addEventListener('input', function() {
-  renderResellerList(this.value);
-});
+document.getElementById('customProdukInput').addEventListener('focus', function() { renderCustomProdukList(this.value); });
+document.getElementById('customProdukInput').addEventListener('input', function() { renderCustomProdukList(this.value); });
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('#resellerInput') && !e.target.closest('#resellerList')) {
-    document.getElementById('resellerList').style.display = 'none';
-  }
-  if (!e.target.closest('#produkInput') && !e.target.closest('#produkList')) {
-    document.getElementById('produkList').style.display = 'none';
+  if (!e.target.closest('#customProdukInput') && !e.target.closest('#customProdukList')) {
+    document.getElementById('customProdukList').style.display = 'none';
   }
 });
 
-document.getElementById('produkInput').addEventListener('focus', function() {
-  renderProdukPickerList(this.value);
-});
-document.getElementById('produkInput').addEventListener('input', function() {
-  renderProdukPickerList(this.value);
-});
-
-document.getElementById('btnAddHarga').addEventListener('click', openModalCreate);
-document.getElementById('modalClose').addEventListener('click', closeModal);
-document.getElementById('modalCancel').addEventListener('click', closeModal);
-
-document.getElementById('modalSubmit').addEventListener('click', async function() {
-  if (!selectedReseller) { showModalAlert('Pilih reseller dulu.'); return; }
-
-  var namaProduk = modalMode === 'create'
-    ? document.getElementById('produkInput').value.trim()
-    : modalEditing.nama_produk;
-  var harga = Number(document.getElementById('hargaInput').value);
-  var catatan = document.getElementById('catatanInput').value.trim();
-
-  if (!namaProduk) return showModalAlert('Pilih produk dulu.');
-  if (!harga || harga <= 0) return showModalAlert('Harga khusus harus > 0.');
-
+document.getElementById('customModalSubmit').addEventListener('click', async function() {
+  if (!currentCustomReseller) return;
+  var namaProduk = customModalMode === 'create' ? document.getElementById('customProdukInput').value.trim() : customModalEditing.nama_produk;
+  var harga = Number(document.getElementById('customHargaInput').value);
+  var catatan = document.getElementById('customCatatanInput').value.trim();
+  if (!namaProduk) return showCustomAlert('Pilih produk.');
+  if (!harga || harga <= 0) return showCustomAlert('Harga > 0.');
   var btn = this;
-  btn.disabled = true;
-  var orig = btn.textContent;
+  btn.disabled = true; var orig = btn.textContent;
   btn.textContent = 'Menyimpan...';
-
-  var r = await KK22_API.setHargaKhusus(selectedReseller.id, namaProduk, harga, catatan);
-  btn.disabled = false;
-  btn.textContent = orig;
-
-  if (!r.ok) {
-    showModalAlert(r.error || 'Gagal simpan.');
-    return;
-  }
-
-  closeModal();
-  showAlert(modalMode === 'create' ? 'Harga khusus ditambahkan.' : 'Harga khusus diupdate.', 'success');
-  await loadHargaList();
+  var r = await KK22_API.setHargaKhusus(currentCustomReseller.id, namaProduk, harga, catatan);
+  btn.disabled = false; btn.textContent = orig;
+  if (!r.ok) { showCustomAlert(r.error || 'Gagal simpan.'); return; }
+  document.getElementById('modalCustom').style.display = 'none';
+  showAlert('Custom override disimpan.', 'success');
+  await loadCustomList();
 });
 
+function showCustomAlert(msg) {
+  var b = document.getElementById('customModalAlert');
+  b.className = 'alert alert-error show';
+  b.textContent = msg;
+}
+
+// ============ INIT ============
 document.getElementById('btnLogout').addEventListener('click', async function() {
   if (!confirm('Keluar dari akun?')) return;
   await KK22_API.logout();
@@ -374,13 +909,14 @@ document.getElementById('btnLogout').addEventListener('click', async function() 
   }
   currentUser = r.data;
 
-  // Load reseller list + produk list (parallel)
   var [rRes, rProd] = await Promise.all([
     KK22_API.getResellerList(),
     KK22_API.getProduk('', true)
   ]);
   if (rRes.ok) allResellers = rRes.data.items || [];
   if (rProd.ok) allProduk = rProd.data.items || [];
+
+  await loadPriceLists();
 })();
 </script>
 </body>
