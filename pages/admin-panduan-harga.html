@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panduan Kebijakan Harga - Kunang-kunang 22</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  .guide-section { margin-bottom: 20px; background: white; border-radius: 12px; padding: 16px; border: 1px solid #eee; }
+  .guide-section h2 { font-size: 16px; color: #333; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  .guide-section h3 { font-size: 14px; color: #333; margin: 14px 0 8px; }
+  .guide-section p { font-size: 13px; color: #666; line-height: 1.5; margin-bottom: 10px; }
+  .model-list { display: grid; gap: 8px; }
+  .model-card { padding: 10px 12px; border-radius: 8px; border-left: 3px solid #ddd; background: #fafbfd; font-size: 13px; }
+  .model-card.aktif { border-left-color: #28a745; background: #f4fdf6; }
+  .model-card.rencana { border-left-color: #ffc107; background: #fffdf5; }
+  .model-card.future { border-left-color: #17a2b8; background: #f5fbfc; }
+  .model-card.skip { border-left-color: #6c757d; background: #f7f8fa; opacity: 0.7; }
+  .model-card .model-name { font-weight: 700; color: #333; margin-bottom: 3px; }
+  .model-card .model-desc { color: #666; font-size: 12px; line-height: 1.4; margin-bottom: 4px; }
+  .model-card .model-example { color: #555; font-family: monospace; font-size: 11px; background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #eee; }
+  .model-card .model-status { float: right; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .model-card.aktif .model-status { background: #28a745; color: white; }
+  .model-card.rencana .model-status { background: #ffc107; color: #333; }
+  .model-card.future .model-status { background: #17a2b8; color: white; }
+  .model-card.skip .model-status { background: #6c757d; color: white; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; margin-bottom: 14px; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend .dot.aktif { background: #28a745; }
+  .legend .dot.rencana { background: #ffc107; }
+  .legend .dot.future { background: #17a2b8; }
+  .legend .dot.skip { background: #6c757d; }
+</style>
+</head>
+<body class="wide">
+<div class="container-wide">
+  <nav class="navbar">
+    <div class="brand">Kunang-kunang <span class="dot">22</span></div>
+    <div class="nav-links">
+      <a href="admin-pesanan.html">Admin Pesanan</a>
+      <a href="admin-users.html">Admin Users</a>
+      <a href="admin-produk.html">Admin Produk</a>
+      <a href="admin-harga.html">Harga</a>
+      <a href="admin-panduan-harga.html" class="active">Program Harga</a>
+      <a href="dashboard.html">Dashboard</a>
+      <button id="btnLogout">Keluar</button>
+    </div>
+  </nav>
+
+  <h1 style="text-align:left;font-size:20px;margin-bottom:6px;">Panduan Kebijakan Harga &amp; Diskon</h1>
+  <p style="color:#888;font-size:13px;margin-bottom:20px;">Katalog lengkap model kebijakan harga dari dunia bisnis. Sebagian sudah aktif di sistem, sebagian direncanakan (Fase 9.7), sebagian untuk referensi ke depan.</p>
+
+  <div class="legend">
+    <span><div class="dot aktif"></div> Aktif di sistem</span>
+    <span><div class="dot rencana"></div> Direncanakan F9.7</span>
+    <span><div class="dot future"></div> Future (F9.8+)</span>
+    <span><div class="dot skip"></div> Skip (tidak direncanakan)</span>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#128230; A. Model Harga Dasar</h2>
+    <p>Bentuk paling fundamental bagaimana harga ditentukan untuk produk.</p>
+    <div class="model-list">
+      <div class="model-card aktif"><span class="model-status">AKTIF</span><div class="model-name">1. Fixed Price</div><div class="model-desc">1 produk = 1 harga tetap.</div><div class="model-example">Bolu A = Rp 25.000</div></div>
+      <div class="model-card aktif"><span class="model-status">AKTIF</span><div class="model-name">2. Price List / Catalog</div><div class="model-desc">Paket harga per grup reseller. Fitur F9.1b.</div><div class="model-example">Paket "Promo Cash": Bolu A = Rp 22.000</div></div>
+      <div class="model-card aktif"><span class="model-status">AKTIF</span><div class="model-name">3. Customer-Specific Price</div><div class="model-desc">Harga khusus per reseller. Fitur F9.1.</div><div class="model-example">Bu Yeni: Bolu A = Rp 20.000 (beda dari reseller lain)</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA</span><div class="model-name">4. Tiered by Quantity</div><div class="model-desc">Harga turun kalau qty besar.</div><div class="model-example">Beli 1-9 = Rp 25rb; 10-49 = Rp 22rb; 50+ = Rp 18rb</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA</span><div class="model-name">5. Wholesale Price</div><div class="model-desc">Harga grosir (bisa via Tiered by Quantity).</div><div class="model-example">Min order 100 pcs = Rp 15.000/pcs</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">6. Contract Price</div><div class="model-desc">Harga kontrak jangka panjang untuk customer tertentu.</div><div class="model-example">Kontrak 6 bulan: Bolu A = Rp 20.000 (berlaku s/d Okt)</div></div>
+    </div>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#128176; B. Diskon</h2>
+    <p>Potongan harga dari harga dasar.</p>
+    <div class="model-list">
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">7. Discount %</div><div class="model-desc">Potongan persen.</div><div class="model-example">Total order Rp 500rb, diskon 10% = Rp 450rb</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">8. Discount Fixed (Rp)</div><div class="model-desc">Potongan nominal tetap.</div><div class="model-example">Total order Rp 500rb, diskon Rp 20rb = Rp 480rb</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">9. Tiered Discount by Total</div><div class="model-desc">Diskon bertingkat berdasarkan total belanja.</div><div class="model-example">≥500rb = 5%; ≥1jt = 10%; ≥2jt = 15%</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">10. Cash Discount</div><div class="model-desc">Diskon kalau bayar cash.</div><div class="model-example">Bayar cash = 3% off (atau via order_discount_pct)</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">11. Early Payment Discount</div><div class="model-desc">Diskon kalau bayar cepat.</div><div class="model-example">Bayar &lt;7 hari = -2%</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">12. Loyalty Tier</div><div class="model-desc">Diskon untuk member loyal.</div><div class="model-example">Member Gold = -10%</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">13. First Order Discount</div><div class="model-desc">Diskon untuk order pertama.</div><div class="model-example">Order pertama = -20%</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">14. Referral Discount</div><div class="model-desc">Diskon kalau bawa teman.</div><div class="model-example">Bawa 1 teman = -Rp 50rb</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">15. Seasonal Discount</div><div class="model-desc">Diskon musiman (Lebaran, Natal).</div><div class="model-example">Lebaran = -15% (via tgl_mulai/selesai)</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">16. Flash Sale</div><div class="model-desc">Diskon kilat waktu terbatas.</div><div class="model-example">12:00-14:00 saja = -30%</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">17. Clearance</div><div class="model-desc">Diskon produk mau expired.</div><div class="model-example">Produk exp &lt;3 hari = -50%</div></div>
+    </div>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#127873; C. Bundle &amp; Bonus</h2>
+    <p>Bukan diskon, tapi mengubah struktur harga.</p>
+    <div class="model-list">
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">18. BXGY (Buy X Get Y)</div><div class="model-desc">Beli X gratis Y.</div><div class="model-example">Beli 5 Bolu A = gratis 1 Bolu A (same)</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">19. Bundle Pricing</div><div class="model-desc">Beli paket = harga khusus.</div><div class="model-example">Beli A+B+C = Rp 50rb (vs 60rb)</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">20. Mix &amp; Match</div><div class="model-desc">Beli 3 apa saja dari kategori X.</div><div class="model-example">3 dari kategori "Kue Kering" = Rp 100rb</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">21. Gift with Purchase</div><div class="model-desc">Beli threshold dapat hadiah.</div><div class="model-example">Beli ≥500rb = gratis 1 kue</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">22. Sample Bonus</div><div class="model-desc">Sample produk baru.</div><div class="model-example">Beli 10 pcs = dapat 1 sample</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">23. Free Shipping</div><div class="model-desc">Gratis ongkir kalau threshold.</div><div class="model-example">≥Rp 300rb = gratis ongkir</div></div>
+    </div>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#128208; D. Constraint (Batasan)</h2>
+    <p>Aturan minimum/maksimum untuk order.</p>
+    <div class="model-list">
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">24. Min Order Qty</div><div class="model-desc">Minimal jumlah item.</div><div class="model-example">Min beli 10 pcs</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">25. Min Order Value</div><div class="model-desc">Minimal total transaksi.</div><div class="model-example">Min transaksi Rp 200rb</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">26. Max Order Qty</div><div class="model-desc">Batas maks item (anti-hoarding).</div><div class="model-example">Maks 100 pcs per order</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">27. Max Order Value</div><div class="model-desc">Batas maks transaksi.</div><div class="model-example">Maks Rp 5jt per order</div></div>
+    </div>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#128279; E. Rule Kombinasi &amp; Prioritas</h2>
+    <p>Bagaimana multiple program digabung atau diprioritaskan.</p>
+    <div class="model-list">
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">28. Stackable</div><div class="model-desc">Program bisa digabung.</div><div class="model-example">Promo A + Promo B = apply keduanya</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">29. Exclusive</div><div class="model-desc">Program tidak bisa digabung.</div><div class="model-example">Pilih A atau B saja</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">30. Sequential Calculation</div><div class="model-desc">Diskon berurutan.</div><div class="model-example">Diskon 10% dulu, lalu 5% dari hasil</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">31. Parallel / Additive</div><div class="model-desc">Diskon dihitung dari harga asli, dijumlah.</div><div class="model-example">10% + 5% = 15% dari harga asli</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">32. Best-for-Customer</div><div class="model-desc">Otomatis pilih kombinasi termurah.</div><div class="model-example">Coba semua kombinasi, kasih yang paling untung customer</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">33. Best-for-Seller</div><div class="model-desc">Otomatis pilih kombinasi paling untung.</div><div class="model-example">Kebalikan dari best-for-customer</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">34. Priority Ordering</div><div class="model-desc">Priority 1 dihitung dulu.</div><div class="model-example">Program A priority 10, B priority 20</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">35. Cap Maximum</div><div class="model-desc">Batas maks total diskon.</div><div class="model-example">Max diskon Rp 100rb per order</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">36. Combinability Matrix</div><div class="model-desc">A+B OK, A+C NOT OK.</div><div class="model-example">Promo Cash bisa + Bundle, tapi tidak + Flash Sale</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">37. Conditional Rules</div><div class="model-desc">If-then logic.</div><div class="model-example">IF tier=gold AND total&gt;1jt THEN diskon 15%</div></div>
+      <div class="model-card rencana"><span class="model-status">RENCANA F9.7</span><div class="model-name">38. Usage Limit</div><div class="model-desc">Batas pemakaian.</div><div class="model-example">1x per customer, 100x total</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">39. Voucher Code</div><div class="model-desc">Kode khusus.</div><div class="model-example">Kode "HEMAT10" = diskon 10%</div></div>
+    </div>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#9889; F. Dynamic &amp; Advanced</h2>
+    <p>Model dinamis (kebanyakan terlalu kompleks untuk sekarang).</p>
+    <div class="model-list">
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">40. Peak/Off-Peak</div><div class="model-desc">Harga beda jam/hari.</div><div class="model-example">Weekend +10%</div></div>
+      <div class="model-card future"><span class="model-status">FUTURE</span><div class="model-name">41. Dynamic Pricing</div><div class="model-desc">Harga naik saat demand tinggi.</div><div class="model-example">Demand naik → harga naik</div></div>
+      <div class="model-card skip"><span class="model-status">SKIP</span><div class="model-name">42. Auction/Tender</div><div class="model-desc">Harga dari bidding.</div><div class="model-example">Tidak relevan untuk B2B kue</div></div>
+      <div class="model-card skip"><span class="model-status">SKIP</span><div class="model-name">43. Subscription</div><div class="model-desc">Bayar bulanan.</div><div class="model-example">Tidak relevan</div></div>
+      <div class="model-card skip"><span class="model-status">SKIP</span><div class="model-name">44. Pay-what-you-want</div><div class="model-desc">Customer tentukan harga.</div><div class="model-example">Tidak relevan</div></div>
+      <div class="model-card skip"><span class="model-status">SKIP</span><div class="model-name">45. Multi-currency</div><div class="model-desc">Beda mata uang.</div><div class="model-example">Tidak perlu (IDR only)</div></div>
+    </div>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#128221; Prioritas Harga di Sistem</h2>
+    <p>Kalau beberapa sumber harga aktif bersamaan, prioritas dari atas ke bawah:</p>
+    <ol style="font-size:13px;color:#333;line-height:1.8;padding-left:20px;margin:0;">
+      <li><b>Program aktif</b> — dihitung sebagai diskon (F9.7)</li>
+      <li><b>Custom override per reseller</b> — harga khusus (F9.1)</li>
+      <li><b>Paket harga</b> — price list (F9.1b)</li>
+      <li><b>Harga normal</b> — default PRODUK.SellPrice</li>
+    </ol>
+    <p style="margin-top:10px;font-style:italic;font-size:12px;">Catatan: program punya field <code>basis_harga</code> — bisa set di atas harga final, atau di atas harga normal/paket/custom tertentu.</p>
+  </div>
+
+  <div class="guide-section">
+    <h2>&#128161; Contoh Kombinasi Program</h2>
+    <p>Total belanja Rp 1.000.000 dengan 3 program aktif:</p>
+    <ul style="font-size:13px;color:#333;line-height:1.8;padding-left:20px;margin:0;">
+      <li><b>Program A:</b> diskon 10% (exclusive, priority 1)</li>
+      <li><b>Program B:</b> diskon Rp 20.000 (stackable, priority 2)</li>
+      <li><b>Program C:</b> tiered ≥500rb → 5% (stackable, priority 3)</li>
+    </ul>
+    <div style="margin-top:12px;">
+      <h3>Sequential (berurutan)</h3>
+      <div class="model-example" style="display:block;padding:10px;line-height:1.6;">Start: Rp 1.000.000<br>→ A (10%): -Rp 100.000 → Rp 900.000<br>→ B (Rp 20.000): -Rp 20.000 → Rp 880.000<br>→ C (5% × 880.000): -Rp 44.000 → <b>Rp 836.000</b></div>
+      <h3>Parallel (paralel)</h3>
+      <div class="model-example" style="display:block;padding:10px;line-height:1.6;">A: 10% × 1.000.000 = Rp 100.000<br>B: Rp 20.000<br>C: 5% × 1.000.000 = Rp 50.000<br>Total diskon = Rp 170.000 → <b>Rp 830.000</b></div>
+      <h3>Best-for-Customer</h3>
+      <div class="model-example" style="display:block;padding:10px;line-height:1.6;">Kombinasi A only → Rp 900.000<br>Kombinasi B+C only → Rp 930.000<br>Kombinasi A+B → Rp 880.000 (A exclusive, C tidak bisa)</div>
+    </div>
+  </div>
+
+  <div class="footer">&copy; 2026 Kunang-kunang 22 &middot; v<span id="verApp"></span></div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script>
+document.getElementById('verApp').textContent = KK22_CONFIG.APP_VERSION;
+
+document.getElementById('btnLogout').addEventListener('click', async function() {
+  if (!confirm('Keluar dari akun?')) return;
+  await KK22_API.logout();
+  window.location.href = 'login.html';
+});
+
+(async function init() {
+  var token = KK22_API.getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  var r = await KK22_API.whoami();
+  if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
+  if (r.data.role !== 'admin' && r.data.role !== 'owner') {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+})();
+</script>
+</body>
+</html>
