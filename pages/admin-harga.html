@@ -108,7 +108,7 @@
           <option value="normal">Harga Normal (default semua produk)</option>
           <option value="price_list">Duplikat dari Paket Lain</option>
           <option value="reseller">Duplikat dari Reseller Existing</option>
-          <option value="excel">Paste dari Excel (nama_produk TAB harga)</option>
+          <option value="excel">Paste / Upload CSV (Excel)</option>
           <option value="empty">Kosong (isi manual nanti)</option>
         </select>
       </div>
@@ -124,9 +124,23 @@
         </div>
       </div>
       <div class="form-row" id="cpSourceExcelWrap" style="display:none;">
-        <label for="cpExcelText">Paste dari Excel (nama_produk [TAB] harga)</label>
-        <textarea id="cpExcelText" placeholder="Bolu Ketan Hitam Lumer&#9;20000&#10;Cheese Clouds Lembang&#9;45000" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
-        <div class="hint">Format: 1 baris = 1 produk, pisah dengan TAB. Baris tanpa produk valid akan dilewati.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+          <label style="margin:0;">Sumber Harga CSV / Excel</label>
+          <button type="button" id="cpBtnDownloadTemplate" class="btn-secondary" style="width:auto;margin:0;padding:6px 10px;font-size:11px;background:#17a2b8;color:white;">&#128229; Download Template</button>
+        </div>
+        <div class="tabs" id="cpExcelTabs" style="margin-bottom:8px;">
+          <button class="active" type="button" data-cp-tab="paste">&#128203; Paste</button>
+          <button type="button" data-cp-tab="upload">&#128193; Upload CSV</button>
+        </div>
+        <div id="cpExcelTabPaste">
+          <textarea id="cpExcelText" placeholder="Bolu Ketan Hitam Lumer&#9;25000&#9;18000&#10;Cheese Clouds Lembang&#9;50000&#9;40000" style="min-height:100px;font-family:monospace;font-size:12px;width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;"></textarea>
+          <div class="hint">Format: nama_produk [TAB] harga_normal [TAB] harga_paket. Kolom harga normal diabaikan (referensi saja).</div>
+        </div>
+        <div id="cpExcelTabUpload" style="display:none;">
+          <input type="file" id="cpExcelFile" accept=".csv,.txt,.tsv" style="width:100%;padding:10px;border:1px dashed #ddd;border-radius:8px;background:#fafbfd;cursor:pointer;">
+          <div id="cpExcelFileInfo" class="hint" style="margin-top:6px;"></div>
+        </div>
+        <div id="cpExcelPreview" class="hint" style="margin-top:8px;padding:8px 10px;background:#f7f8fa;border-radius:6px;display:none;"></div>
       </div>
       <div id="cpAlert" class="alert"></div>
     </div>
@@ -463,6 +477,120 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// ============ F9.1b-10: Create Paket — Paste/Upload CSV ============
+var createPaketExcelItems = [];
+
+// Alias ke parser bulk (F9.1b-9) — shape { items, skipped }
+function parseExcelTextCsv(text) {
+  return parseBulkTabularText(text);
+}
+
+function updateCpExcelPreview(parsed) {
+  var prev = document.getElementById('cpExcelPreview');
+  if (!parsed || parsed.items.length === 0) {
+    prev.style.display = 'block';
+    prev.innerHTML = '<b style="color:#dc3545;">Tidak ada item valid. Periksa format.</b>';
+    createPaketExcelItems = [];
+    return;
+  }
+  createPaketExcelItems = parsed.items;
+  prev.style.display = 'block';
+  prev.innerHTML =
+    '<b style="color:#155724;">&#10004; ' + parsed.items.length + ' produk valid</b>' +
+    (parsed.skipped > 0 ? ' &middot; <span style="color:#dc3545;">' + parsed.skipped + ' baris dilewati</span>' : '') +
+    '<div style="margin-top:4px;font-size:11px;color:#666;">Contoh: ' + esc(parsed.items[0].nama_produk) + ' (' + rp(parsed.items[0].harga) + ')</div>';
+}
+
+// Tab switching
+document.querySelectorAll('#cpExcelTabs button').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#cpExcelTabs button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var tab = btn.dataset.cpTab;
+    document.getElementById('cpExcelTabPaste').style.display = tab === 'paste' ? 'block' : 'none';
+    document.getElementById('cpExcelTabUpload').style.display = tab === 'upload' ? 'block' : 'none';
+  });
+});
+
+// Paste handler
+document.getElementById('cpExcelText').addEventListener('input', function() {
+  updateCpExcelPreview(parseExcelTextCsv(this.value));
+});
+
+// Upload handler
+document.getElementById('cpExcelFile').addEventListener('change', function(e) {
+  var file = e.target.files && e.target.files[0];
+  var info = document.getElementById('cpExcelFileInfo');
+  if (!file) { info.textContent = ''; createPaketExcelItems = []; return; }
+  info.innerHTML = 'Membaca <b>' + esc(file.name) + '</b>...';
+  var reader = new FileReader();
+  reader.onload = function(evt) {
+    var text = String(evt.target.result || '');
+    if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
+    var parsed = parseExcelTextCsv(text);
+    info.innerHTML = '<b>' + esc(file.name) + '</b> &middot; ' + parsed.items.length + ' valid, ' + parsed.skipped + ' dilewati';
+    updateCpExcelPreview(parsed);
+  };
+  reader.onerror = function() {
+    info.innerHTML = '<span style="color:#dc3545;">Gagal baca file.</span>';
+  };
+  reader.readAsText(file, 'UTF-8');
+});
+
+// Download template (dari produk normal — kolom Harga Paket kosong)
+document.getElementById('cpBtnDownloadTemplate').addEventListener('click', function() {
+  if (!allProduk || allProduk.length === 0) {
+    showCpAlert('Produk belum dimuat. Tutup & buka modal lagi.');
+    return;
+  }
+  function csvCell(v) {
+    var s = String(v == null ? '' : v);
+    if (s.indexOf('"') !== -1 || s.indexOf(',') !== -1 || s.indexOf('\n') !== -1) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+  var lines = [];
+  lines.push(csvCell('Nama Produk') + ',' + csvCell('Harga Normal') + ',' + csvCell('Harga Paket'));
+  allProduk.forEach(function(p) {
+    if (!p.aktif) return;
+    lines.push(csvCell(p.nama_produk) + ',' + csvCell(p.harga_jual) + ',');
+  });
+  var csvContent = '\uFEFF' + lines.join('\r\n');
+  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  var fileName = 'template-paket-baru.csv';
+  if (navigator.msSaveBlob) navigator.msSaveBlob(blob, fileName);
+  else {
+    var link = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  }
+  showAlert('Template diunduh: ' + fileName, 'success');
+});
+
+// Reset state & tab setiap kali modal create paket dibuka
+document.getElementById('btnAddPaket').addEventListener('click', function() {
+  createPaketExcelItems = [];
+  var prev = document.getElementById('cpExcelPreview');
+  if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
+  var f = document.getElementById('cpExcelFile');
+  if (f) f.value = '';
+  var info = document.getElementById('cpExcelFileInfo');
+  if (info) info.textContent = '';
+  document.querySelectorAll('#cpExcelTabs button').forEach(function(b) { b.classList.remove('active'); });
+  var firstTab = document.querySelector('#cpExcelTabs button[data-cp-tab="paste"]');
+  if (firstTab) firstTab.classList.add('active');
+  var tabPaste = document.getElementById('cpExcelTabPaste');
+  var tabUp = document.getElementById('cpExcelTabUpload');
+  if (tabPaste) tabPaste.style.display = 'block';
+  if (tabUp) tabUp.style.display = 'none';
+});
+
 document.getElementById('createPaketSubmit').addEventListener('click', async function() {
   var nama = document.getElementById('cpNama').value.trim();
   var deskripsi = document.getElementById('cpDeskripsi').value.trim();
@@ -478,10 +606,16 @@ document.getElementById('createPaketSubmit').addEventListener('click', async fun
     if (!createPaketSourceReseller) { showCpAlert('Pilih reseller sumber.'); return; }
     sourceId = createPaketSourceReseller.id;
   } else if (source === 'excel') {
-    var txt = document.getElementById('cpExcelText').value.trim();
-    if (!txt) { showCpAlert('Paste data Excel dulu.'); return; }
-    items = parseExcelText(txt);
-    if (items.length === 0) { showCpAlert('Tidak ada item valid dari Excel.'); return; }
+    if (createPaketExcelItems.length > 0) {
+      items = createPaketExcelItems;
+    } else {
+      var txt = document.getElementById('cpExcelText').value.trim();
+      if (txt) items = parseExcelTextCsv(txt).items;
+    }
+    if (!items || items.length === 0) {
+      showCpAlert('Paste data atau upload CSV dulu.');
+      return;
+    }
   }
 
   var btn = this;
@@ -545,7 +679,7 @@ async function loadMatrix() {
   }
   currentMatrixItems = r.data.items || [];
   document.getElementById('matrixTitle').textContent = r.data.header.nama_paket;
-  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' Ã‚Â· ' + currentMatrixItems.length + ' produk';
+  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' Ãƒâ€šÃ‚Â· ' + currentMatrixItems.length + ' produk';
   renderMatrix();
 }
 
