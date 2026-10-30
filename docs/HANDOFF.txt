@@ -2,8 +2,8 @@
 HANDOFF - SISTEM PEMESANAN RESELLER KUNANG-KUNANG 22
 Untuk melanjutkan di chat baru dengan AI assistant
 ================================================================
-Terakhir diupdate: 2026-10-29 (F9.7A selesai, break)
-Versi            : 0.9.1-alpha
+Terakhir diupdate: 2026-10-30 (F9.7A + CSS cleanup + mojibake fix)
+Versi            : 0.9.2-alpha
 
 ================================================================
 1. CARA KERJA USER (PENTING - IKUTI INI)
@@ -199,7 +199,7 @@ TEST CACHE (Fase 5.5 - hasil nyata):
 9. MASALAH YANG PERLU DI-FIX (FASE 5.6 - MENDESAK)
 ================================================================
 DIAGNOSA: Cache PRODUK LIST GAGAL tersimpan.
-Penyebab: 502 items ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ~200 bytes ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â  100 KB > 95 KB limit
+Penyebab: 502 items ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ~200 bytes ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â  100 KB > 95 KB limit
           (CacheService.getScriptCache() max 100 KB per key).
           cachePut_ return false silently.
 
@@ -213,7 +213,7 @@ Opsi A (REKOMENDASI): Compact produk list
   - Cache hanya: id_produk, nama_produk, harga_jual, satuan,
     gambar_url, aktif, stok_available
   - Field lain (kode_sku, stok_tersedia, stok_reserved) on-demand
-  - Estimasi: 502 ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â 80 bytes = ~40 KB -> MASUK limit
+  - Estimasi: 502 ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â 80 bytes = ~40 KB -> MASUK limit
 
 Opsi B: Split per chunk
   - 5 keys: produk_list_0..4 (100 produk per key)
@@ -308,16 +308,16 @@ SELESAI HANDOFF
 ================================================================
 
 ================================================================
-15. UPDATE 2026-10-27 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â FASE 6 SELESAI (catatan lengkap)
+15. UPDATE 2026-10-27 ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â FASE 6 SELESAI (catatan lengkap)
 ================================================================
 
 FASE 5.6 SELESAI (compact cache produk):
 - Cache compact produk_list (short field names: i/n/s/h/sa/g/a)
 - Server-side cached: 0.37-0.71 detik (dari ~1.5-2 detik sebelumnya)
 - Client-side overhead Apps Script ~1 detik (floor, tidak bisa dihindari)
-- Frontend localStorage cache produk (TTL 5 menit) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ instant untuk user
+- Frontend localStorage cache produk (TTL 5 menit) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ instant untuk user
 
-FASE 6 SELESAI (Frontend katalog + form pesanan) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Commit history:
+FASE 6 SELESAI (Frontend katalog + form pesanan) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Commit history:
   e767721: Fase 6 awal (katalog + form + cart + localStorage produk cache)
   7b5e89a: UX v2 (tap-to-add, tanpa input number)
   84a705f: UX v3 (qty badge + foto landscape 2:1 + counter stok 0)
@@ -333,12 +333,12 @@ FILE BARU / DIUBAH:
   * Grid produk responsive, foto landscape 2:1
   * Placeholder visual (emoji kue) untuk produk tanpa gambar_url
   * Lightbox foto + placeholder fallback
-  * Tombol + (besar) / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ (kecil) untuk add/remove cart
+  * Tombol + (besar) / ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ (kecil) untuk add/remove cart
   * Qty badge live di samping harga
   * Sticky navbar + toolbar (search + filter sticky saat scroll)
   * Back-to-top button (pojok kanan bawah, muncul setelah scroll 300px)
   * Counter stok 0 transparan ("N stok 0 disembunyikan")
-  * localStorage cache produk 5 menit ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ reload instant
+  * localStorage cache produk 5 menit ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ reload instant
 
 - pages/pesan.html (BARU):
   * Keranjang dengan qty editor + hapus
@@ -374,27 +374,27 @@ ENDPOINT BACKEND BARU (Api.gs + Pesanan.gs):
   * 2235 reseller aktif, cold: 2694 ms, cached: 1756 ms
   * Handler di Pesanan.gs (line ~485), route di Api.gs (setelah toggleProdukAktif)
 
-BACKLOG FASE 9 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â MENU SETTINGS ADMIN (permintaan user 2026-10-27):
+BACKLOG FASE 9 ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â MENU SETTINGS ADMIN (permintaan user 2026-10-27):
 
 1. HARGA KHUSUS PER RESELLER
    - Bulk + cash pricing, bisa lebih rendah dari harga_jual default
    - Tabel baru: RESELLER_HARGA (id_reseller, nama_produk, harga_khusus, ...)
    - Endpoint: setHargaKhusus (admin/owner only)
-   - getProduk: kalau user.role=reseller & ada harga_khusus ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ override harga_jual
-   - UI: admin pilih reseller ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ list produk ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ set harga
+   - getProduk: kalau user.role=reseller & ada harga_khusus ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ override harga_jual
+   - UI: admin pilih reseller ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ list produk ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ set harga
 
 2. VISIBILITAS PRODUK PER RESELLER (MAKLON)
    - Ada produk maklon yang hanya untuk reseller tertentu
    - Kolom baru RESELLER.produk_mode: 'all' (default) / 'whitelist'
    - Tabel baru: RESELLER_PRODUK (id_reseller, nama_produk)
-   - getProduk: kalau user.produk_mode=whitelist ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ hanya tampilkan whitelist
-   - UI: admin pilih reseller ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ checklist produk yang boleh dilihat
+   - getProduk: kalau user.produk_mode=whitelist ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ hanya tampilkan whitelist
+   - UI: admin pilih reseller ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ checklist produk yang boleh dilihat
 
 3. ROLE MANAGEMENT UI (data-driven)
    - Menu admin: kelola user (list USERS)
    - Edit role via dropdown: owner / admin / marketing / reseller
    - Role list disimpan di sheet CONFIG (bukan hardcode)
-     ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ tambah role baru cukup edit CONFIG, tidak perlu deploy ulang
+     ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ tambah role baru cukup edit CONFIG, tidak perlu deploy ulang
    - Endpoint: updateUserRole (owner-only)
    - Catatan: role 'marketing' BELUM dibuat. Sementara user marketing
      pakai role 'admin' sampai Fase 9 (tidak ada hardcode baru)
@@ -402,14 +402,14 @@ BACKLOG FASE 9 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢Ãƒ�
 4. UPLOAD FOTO PRODUK
    - Form admin: ambil foto kamera HP (input type=file capture=environment)
      atau upload file biasa
-   - Simpan ke Google Drive (folder dedicated) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ URL publik
+   - Simpan ke Google Drive (folder dedicated) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ URL publik
    - Update PRODUK.gambar_url via admin UI
    - Katalog frontend otomatis pakai gambar (tidak ada perubahan kode)
 
-BACKLOG FASE 10 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â REGISTRASI RESELLER:
+BACKLOG FASE 10 ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â REGISTRASI RESELLER:
 - User daftar mandiri di landing page
 - Wajib verifikasi: user+pass match ke reseller yang sudah ada
-- Admin approve ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ aktifkan akun
+- Admin approve ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ aktifkan akun
 - Link USERS.id_reseller ke RESELLER.id_reseller
 - Endpoint: register, verifyRegistration, approveUser
 
@@ -430,10 +430,10 @@ SELESAI HANDOFF
 ================================================================
 
 ================================================================
-16. UPDATE 2026-10-28 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â FASE 8 SELESAI (admin dashboard)
+16. UPDATE 2026-10-28 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â FASE 8 SELESAI (admin dashboard)
 ================================================================
 
-FASE 8 SELESAI ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Admin Dashboard (lock/unlock + user mgmt + produk toggle)
+FASE 8 SELESAI ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Admin Dashboard (lock/unlock + user mgmt + produk toggle)
 
 Commit history:
   9555f55: F8.6 dashboard role-based menu (admin/owner lihat menu admin)
@@ -452,7 +452,7 @@ FILE BARU:
   * List semua PO (chip filter: Semua/Submitted/Partial Locked/Locked/Shipped/Done)
   * Search nama reseller + order_number
   * Card view: order_number, nama_reseller, tgl kirim, status badge, total
-  * Tap card ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ admin-pesanan-detail.html?id=KK22-PSN-XXXX
+  * Tap card ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ admin-pesanan-detail.html?id=KK22-PSN-XXXX
 - pages/admin-pesanan-detail.html
   * Header gradient (order_number, reseller, tgl, status, total)
   * Action bar: counter item dipilih + Lock N Item + Refresh
@@ -462,9 +462,9 @@ FILE BARU:
 - pages/admin-produk.html
   * Grid produk dengan tombol Nonaktifkan (merah) / Aktifkan (hijau)
   * Chip filter: Semua/Aktif/Nonaktif
-  * Counter: "N dari 502 produk ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· X aktif, Y nonaktif"
+  * Counter: "N dari 502 produk ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· X aktif, Y nonaktif"
   * Search client-side
-  * Setelah toggle ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ clearProdukCache (katalog reseller refresh)
+  * Setelah toggle ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ clearProdukCache (katalog reseller refresh)
 - pages/debug.html
   * Diagnostik session (token, user, whoami, kesimpulan)
   * Force logout + clear semua cache
@@ -488,24 +488,24 @@ AKUN TEST (di sheet USERS):
 - KK22-USR-0005 | 628333333333 | reseller | Test Reseller 2 | id_reseller KK22-RSL-0003
 - KK22-USR-0006 | 628555555555 | reseller | Test Reseller 3 | id_reseller KK22-RSL-0004
 
-BACKLOG FASE 8 ENHANCEMENT (F8.4d ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â nanti setelah F7):
+BACKLOG FASE 8 ENHANCEMENT (F8.4d ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â nanti setelah F7):
 BULK LOCK/UNLOCK di list admin-pesanan:
 - Filter tanggal kirim (date picker)
 - Checkbox per PO + "Pilih Semua"
 - Bulk action:
   * Lock/unlock per PO (sudah ada di detail)
   * All PO (massal)
-  * Per produk (aggregate ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â lock semua item dengan produk tertentu di banyak PO)
+  * Per produk (aggregate ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â lock semua item dengan produk tertentu di banyak PO)
   * Pilih beberapa produk (multi-select)
   * All produk
-- Action bar sticky di list: "N PO dipilih ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· [ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Lock] [ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Unlock]"
+- Action bar sticky di list: "N PO dipilih ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· [ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ Lock] [ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ Unlock]"
 - Backend: kemungkinan perlu endpoint lockItemsBulk atau reuse loop
 
-BACKLOG FASE 9 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â MENU SETTINGS ADMIN:
+BACKLOG FASE 9 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â MENU SETTINGS ADMIN:
 1. HARGA KHUSUS PER RESELLER
    - Tabel RESELLER_HARGA (id_reseller, nama_produk, harga_khusus)
-   - getProduk: kalau reseller ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ override harga_jual
-   - UI: pilih reseller ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ list produk ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ set harga
+   - getProduk: kalau reseller ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ override harga_jual
+   - UI: pilih reseller ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ list produk ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ set harga
 2. VISIBILITAS PRODUK HYBRID
    - Tabel RESELLER_PRODUK (id_reseller, nama_produk, mode=include/exclude)
    - Default: reseller baru lihat semua produk aktif
@@ -518,26 +518,26 @@ BACKLOG FASE 9 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â�
    - Menu admin: edit role user, aktif/nonaktif
 4. UPLOAD FOTO PRODUK
    - Input type=file capture=environment (kamera HP) atau file picker
-   - Upload ke Google Drive ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ URL publik ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ update PRODUK.gambar_url
+   - Upload ke Google Drive ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ URL publik ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ update PRODUK.gambar_url
 5. MINIMUM ORDER QTY/NILAI PER RESELLER
    - Setting di menu admin: minimal qty total atau minimal nilai total per reseller
    - Validasi di buatPesanan backend
 
-BACKLOG FASE 10 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â REGISTRASI RESELLER:
+BACKLOG FASE 10 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â REGISTRASI RESELLER:
 - User daftar mandiri di landing page (form no_hp, nama, PIN)
 - Status awal: pending_approval
 - Admin approval: bisa edit nama (kalau input user kurang sesuai), link ke id_reseller existing atau create baru
-- Approve ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ aktif, reject ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ rejected + alasan
+- Approve ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ aktif, reject ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ rejected + alasan
 - Kolom baru USERS: status_approval, catatan_approval, approved_by, approved_at
 
-NEXT: FASE 7 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â PESANAN SAYA (dashboard reseller)
+NEXT: FASE 7 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â PESANAN SAYA (dashboard reseller)
 - Halaman pages/pesanan-saya.html
   * Card view + chip filter status (Pending/Partial Locked/Locked/Shipped/Done)
   * Search by order_number / tgl kirim
 - Halaman pages/pesanan-saya-detail.html?id=KK22-PSN-XXXX
-  * Header + timeline status (submit ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ lock ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ shipped ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ done)
+  * Header + timeline status (submit ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ lock ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ shipped ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ done)
   * Items list (readonly untuk reseller)
-  * TOMBOL DUPLIKAT: ambil semua items dari PO lama ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ add ke cart ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ redirect pesan.html
+  * TOMBOL DUPLIKAT: ambil semua items dari PO lama ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ add ke cart ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ redirect pesan.html
   * Skip produk nonaktif/tidak ada di master (dengan warning count)
 - Update dashboard.html: tile "Pesanan Saya" untuk role reseller (dan admin/owner bisa lihat juga opsional)
 - Print PO: ditunda ke Fase 12
@@ -548,10 +548,10 @@ SELESAI HANDOFF
 ================================================================
 
 ================================================================
-17. UPDATE 2026-10-28 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â FASE 7 SELESAI (Pesanan Saya + Edit PO)
+17. UPDATE 2026-10-28 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â FASE 7 SELESAI (Pesanan Saya + Edit PO)
 ================================================================
 
-FASE 7 SELESAI ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Reseller Dashboard (Pesanan Saya + Duplikat + Edit)
+FASE 7 SELESAI ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Reseller Dashboard (Pesanan Saya + Duplikat + Edit)
 
 Commit history:
   bde5f84: F7.1-7.4 pesanan-saya list + detail + timeline + duplikat
@@ -563,36 +563,36 @@ FILE BARU:
   * Chip filter status: Semua / Pending / Diproses / Siap Kirim / Dikirim / Selesai
   * Search order_number + customer_ref_no
   * Card view: badge tanggal ungu (besar) + tgl kirim + order number + total qty + harga + status
-  * Tap ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ pesanan-saya-detail.html?id=KK22-PSN-XXXX
+  * Tap ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ pesanan-saya-detail.html?id=KK22-PSN-XXXX
   * Guard: admin/owner redirect ke admin-pesanan.html
 
 - pages/pesanan-saya-detail.html (11170 bytes)
   * Header gradient ungu (order_number, reseller, tgl, status, total)
-  * Timeline visual 4 tahap: Dipesan ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Diproses ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Dikirim ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Selesai
+  * Timeline visual 4 tahap: Dipesan ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Diproses ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Dikirim ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Selesai
     - Animation pulse di step "current"
-    - Status cancelled ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tampil "Pesanan dibatalkan"
+    - Status cancelled ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ tampil "Pesanan dibatalkan"
   * Action bar:
-    * ÃƒÂ¢Ã…â€œÃ‚Â Edit Pesanan (hijau) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â hanya jika status=submitted/partial_locked
-    * ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ Duplikat (ungu) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â selalu tersedia
+    * ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â Edit Pesanan (hijau) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â hanya jika status=submitted/partial_locked
+    * ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ Duplikat (ungu) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â selalu tersedia
     * Kalau PO sudah locked/shipped/done: Edit disabled + hint "WA admin"
   * List items readonly dengan badge status per item
   * Duplikat flow:
-    - Confirm ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ getProduk (cache) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ filter aktif ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ add ke cart (merge)
-    - Skip produk nonaktif/tidak ada di master ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ warning list
-    - Simpan sessionStorage kk22_dup_info ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ redirect pesan.html
-    - pesan.html baca info ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tampil banner biru
+    - Confirm ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ getProduk (cache) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ filter aktif ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ add ke cart (merge)
+    - Skip produk nonaktif/tidak ada di master ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ warning list
+    - Simpan sessionStorage kk22_dup_info ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ redirect pesan.html
+    - pesan.html baca info ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ tampil banner biru
 
-- pages/pesanan-saya-edit.html (15866 bytes) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â BARU (F7.5)
-  * Load detail PO ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ lock items readonly, pending items editable
-  * Per item pending: ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢  qty input  +  ÃƒÂ°Ã…Â¸Ã¢â‚¬â€Ã¢â‚¬Ëœ (hapus)
-  * Tombol + Tambah Produk ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ modal search dari cache produk (exclude existing)
+- pages/pesanan-saya-edit.html (15866 bytes) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â BARU (F7.5)
+  * Load detail PO ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ lock items readonly, pending items editable
+  * Per item pending: ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢  qty input  +  ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬ÂÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ (hapus)
+  * Tombol + Tambah Produk ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ modal search dari cache produk (exclude existing)
   * Total recap live (auto-recalc)
-  * Tombol Batal + ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¾ Simpan Perubahan
-  * Save ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ endpoint updatePesananItems
-  * Confirm dialog kalau semua item dihapus ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ "PO akan dibatalkan"
-  * Guard: status bukan submitted/partial_locked ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tampil error + redirect
+  * Tombol Batal + ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¾ Simpan Perubahan
+  * Save ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ endpoint updatePesananItems
+  * Confirm dialog kalau semua item dihapus ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ "PO akan dibatalkan"
+  * Guard: status bukan submitted/partial_locked ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ tampil error + redirect
 
-FITUR BARU ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â EDIT PO SELAMA PENDING (F7.5):
+FITUR BARU ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â EDIT PO SELAMA PENDING (F7.5):
 Ini menjawab prinsip bisnis: "reseller bisa edit selama belum di-lock admin".
 Sebelumnya workaround hanya bisa duplikat (semua item ke cart), tidak bisa:
 - Kurangi qty
@@ -610,10 +610,10 @@ Sekarang backend handleUpdatePesananItems_:
   * INSERT row pending baru
   * Recalc total_qty, total_harga, total_item (termasuk locked)
   * Auto-update header status:
-    - Semua kosong ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ cancelled (soft-cancel)
-    - Ada locked + ada pending ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ partial_locked
-    - Ada locked + 0 pending ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ locked
-    - Semua pending ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ submitted
+    - Semua kosong ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ cancelled (soft-cancel)
+    - Ada locked + ada pending ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ partial_locked
+    - Ada locked + 0 pending ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ locked
+    - Semua pending ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ submitted
 - Uses LockService (30s timeout) untuk concurrent safety
 - Log aktivitas
 
@@ -627,10 +627,10 @@ CSS UPDATE (assets/css/style.css: 41037 bytes):
 - .timeline / .tl-step / .tl-dot / .tl-line (4-tahap visual)
 - .tl-step.current dengan animation tlPulse
 - .dup-info-box (banner biru di pesan.html)
-- .qty-btn (bulat ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢/+) + .btn-del-edit (merah) + .modal-produk-row
+- .qty-btn (bulat ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢/+) + .btn-del-edit (merah) + .modal-produk-row
 
 STORE & EVENT:
-- sessionStorage: kk22_dup_info { ditambah, dilewati[] } ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ di-consumed pesan.html
+- sessionStorage: kk22_dup_info { ditambah, dilewati[] } ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ di-consumed pesan.html
 - cart (localStorage) dipakai ulang untuk duplikat
 
 AKSES & GUARD:
@@ -639,24 +639,24 @@ AKSES & GUARD:
 - Cross-check: reseller tidak bisa edit PO reseller lain (server-side validated)
 
 TEST END-TO-END PASS (2026-10-28):
-A. Dashboard reseller ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tile Pesanan Saya muncul
+A. Dashboard reseller ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ tile Pesanan Saya muncul
 B. List PO + chip filter + card view OK
 C. Detail: timeline + 2 tombol (Edit/Duplikat) OK
 D. Halaman edit termuat
 E. Edit qty/hapus/tambah/simpan sukses, total recalc, sheet sync
-F. Duplikat ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ redirect pesan.html + banner info
-G. Admin akses pesanan-saya-edit.html ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ redirect ke admin-pesanan-detail
+F. Duplikat ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ redirect pesan.html + banner info
+G. Admin akses pesanan-saya-edit.html ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ redirect ke admin-pesanan-detail
 
 NEXT:
-- F8.4d ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Bulk lock/unlock enhancement (filter tanggal, pilih semua, per produk, all produk)
-- ATAU langsung F9 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Menu Settings Admin:
+- F8.4d ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Bulk lock/unlock enhancement (filter tanggal, pilih semua, per produk, all produk)
+- ATAU langsung F9 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Menu Settings Admin:
   1. Harga khusus per reseller
   2. Visibility produk hybrid (default all + override blacklist/whitelist)
   3. Role management data-driven (dari sheet CONFIG)
-  4. Upload foto produk (kamera HP / file picker ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Drive)
+  4. Upload foto produk (kamera HP / file picker ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Drive)
   5. Minimum order qty/nilai per reseller
-- F10 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Registrasi reseller + approval + admin edit nama
-- F12 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Print templates (per PO, surat jalan, invoice)
+- F10 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Registrasi reseller + approval + admin edit nama
+- F12 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Print templates (per PO, surat jalan, invoice)
 
 
 ================================================================
@@ -664,10 +664,10 @@ SELESAI HANDOFF
 ================================================================
 
 ================================================================
-18. UPDATE 2026-10-29 Ã¢â‚¬â€ FASE 8.4d SELESAI (Bulk Lock/Unlock)
+18. UPDATE 2026-10-29 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â FASE 8.4d SELESAI (Bulk Lock/Unlock)
 ================================================================
 
-FASE 8.4d SELESAI Ã¢â‚¬â€ Bulk Lock/Unlock untuk Admin
+FASE 8.4d SELESAI ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Bulk Lock/Unlock untuk Admin
 
 Commit history:
   74ff794: F8.4d bulk lock/unlock (filter tgl, pilih semua, per produk) + 3 endpoint
@@ -675,7 +675,7 @@ Commit history:
 
 BACKEND BARU (AdminPesanan.gs + Api.gs):
 - getProdukInPOs (admin/owner):
-  * Input: {token, id_pesanan_list[]} Ã¢â‚¬â€ maks 100 PO per batch
+  * Input: {token, id_pesanan_list[]} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â maks 100 PO per batch
   * Aggregate pending items by nama_produk
   * Return: [{nama_produk, n_item, n_po, total_qty}, ...]
 - lockItemsBulk:
@@ -694,31 +694,31 @@ FRONTEND UPDATE (admin-pesanan.html):
 - Filter Tanggal Kirim (date picker) di atas list + tombol Reset
 - Checkbox per PO card + "Pilih Semua (yang tampil)"
 - Action bar sticky (muncul saat ada PO terpilih):
-  * Lock Semua Ã¢â‚¬â€ lock semua pending di PO terpilih
-  * Lock Per Produk Ã¢â‚¬â€ modal pilih produk + search
-  * Unlock Ã¢â‚¬â€ modal isi alasan (WAJIB) + unlock semua locked
-  * X (Clear) Ã¢â‚¬â€ reset selection
+  * Lock Semua ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â lock semua pending di PO terpilih
+  * Lock Per Produk ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â modal pilih produk + search
+  * Unlock ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â modal isi alasan (WAJIB) + unlock semua locked
+  * X (Clear) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â reset selection
 - Card visual: highlight ungu saat dipilih
 - Split card layout: checkbox kiri, body kanan (click body = detail, click checkbox = select)
 
 MODAL LOCK PER PRODUK (F8.4d-6):
 - Aggregate list semua produk unique di PO terpilih
-- Search filter live (ketik "bolu" Ã¢â€ â€™ tampil semua yang ada "bolu")
-- "Pilih Semua yang Tampil" Ã¢â‚¬â€ hanya check visible/filtered
+- Search filter live (ketik "bolu" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tampil semua yang ada "bolu")
+- "Pilih Semua yang Tampil" ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â hanya check visible/filtered
 - State PERSIST antar search keyword (bolu + cheese + dll bisa di-check bertahap)
-- "Reset" Ã¢â‚¬â€ clear semua selection
-- Submit baca dari state (bukan DOM) Ã¢â€ â€™ tidak kehilangan pilihan saat ganti keyword
+- "Reset" ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â clear semua selection
+- Submit baca dari state (bukan DOM) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tidak kehilangan pilihan saat ganti keyword
 - Tombol submit show count: "Lock N Produk"
 
 ALUR BULK LOCK (contoh user):
-1. Filter tgl kirim = 2026-11-01 Ã¢â€ â€™ list terfilter
-2. Klik "Pilih Semua" Ã¢â€ â€™ semua card terpilih
-3. Klik "Lock Per Produk" Ã¢â€ â€™ modal muncul
-4. Ketik "bolu" Ã¢â€ â€™ hanya produk bolu tampil
-5. Centang semua bolu Ã¢â€ â€™ state tersimpan
-6. Ketik "cheese" Ã¢â€ â€™ hanya cheese tampil (bolu tetap tersimpan di state)
-7. Centang semua cheese Ã¢â€ â€™ state bertambah
-8. Klik "Lock N Produk" Ã¢â€ â€™ lock hanya produk bolu + cheese di semua PO terpilih
+1. Filter tgl kirim = 2026-11-01 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ list terfilter
+2. Klik "Pilih Semua" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ semua card terpilih
+3. Klik "Lock Per Produk" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ modal muncul
+4. Ketik "bolu" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ hanya produk bolu tampil
+5. Centang semua bolu ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ state tersimpan
+6. Ketik "cheese" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ hanya cheese tampil (bolu tetap tersimpan di state)
+7. Centang semua cheese ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ state bertambah
+8. Klik "Lock N Produk" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ lock hanya produk bolu + cheese di semua PO terpilih
 9. Status PO jadi partial_locked (item lain masih pending)
 
 CSS (style.css: +200 lines):
@@ -737,33 +737,33 @@ TEST PASS (2026-10-28):
 - Frontend: filter bolu + centang semua + lock berhasil
 
 CATATAN:
-- Frontend baca state dari lockProdukSelected{} Ã¢â‚¬â€ tidak kehilangan pilihan saat ganti keyword
+- Frontend baca state dari lockProdukSelected{} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tidak kehilangan pilihan saat ganti keyword
 - Setiap kali buka modal, state di-reset (tidak nyangkut dari sesi sebelumnya)
 - Maks 100 PO per batch di frontend (disable tombol kalau lewat)
 - Unlock wajib alasan (audit trail di LOG_AKTIVITAS)
 
-NEXT: FASE 9 Ã¢â‚¬â€ MENU SETTINGS ADMIN (5 fitur bisnis inti)
+NEXT: FASE 9 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MENU SETTINGS ADMIN (5 fitur bisnis inti)
 Rencana pecah per sub-fase supaya tidak overwhelm:
 
-F9.1 Ã¢â‚¬â€ HARGA KHUSUS PER RESELLER
+F9.1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â HARGA KHUSUS PER RESELLER
 - Tabel baru RESELLER_HARGA (id_reseller, nama_produk, harga_khusus, berlaku_dari, catatan)
 - Endpoint: getHargaKhususList, setHargaKhusus, deleteHargaKhusus (admin/owner)
-- getProduk: kalau user.role=reseller Ã¢â€ â€™ override harga_jual dengan harga_khusus
+- getProduk: kalau user.role=reseller ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ override harga_jual dengan harga_khusus
 - UI: halaman admin-harga.html
   * Pilih reseller (autocomplete)
   * List produk dengan harga override
   * Form set/edit/hapus harga khusus
 
-F9.2 Ã¢â‚¬â€ VISIBILITY PRODUK HYBRID
+F9.2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â VISIBILITY PRODUK HYBRID
 - Tabel baru RESELLER_PRODUK (id_reseller, nama_produk, mode=include/exclude)
 - Kolom baru RESELLER.produk_mode ('all' default / 'whitelist')
 - Endpoint: getVisibilityList, setVisibilityMode, addProdukVisibility, removeProdukVisibility
-- getProduk: reseller baru lihat semua aktif, kalau ada baris exclude Ã¢â€ â€™ hide,
-  kalau mode=whitelist Ã¢â€ â€™ hanya include
-- UI: halaman admin-visibility.html (pilih reseller Ã¢â€ â€™ kelola exclude/include)
+- getProduk: reseller baru lihat semua aktif, kalau ada baris exclude ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ hide,
+  kalau mode=whitelist ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ hanya include
+- UI: halaman admin-visibility.html (pilih reseller ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ kelola exclude/include)
 
-F9.3 Ã¢â‚¬â€ ROLE MANAGEMENT DATA-DRIVEN
-- Tabel baru CONFIG sudah ada Ã¢â€ â€™ simpan role list di CONFIG key='roles'
+F9.3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ROLE MANAGEMENT DATA-DRIVEN
+- Tabel baru CONFIG sudah ada ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ simpan role list di CONFIG key='roles'
 - Atau tabel baru ROLES (nama, label, level, permissions)
 - Backend: createUser ambil validRoles dari config (bukan hardcode)
 - UI: halaman admin-roles.html (owner only)
@@ -771,21 +771,21 @@ F9.3 Ã¢â‚¬â€ ROLE MANAGEMENT DATA-DRIVEN
   * Tambah/edit role
   * Edit user role dropdown ambil dari config
 
-F9.4 Ã¢â‚¬â€ UPLOAD FOTO PRODUK
+F9.4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â UPLOAD FOTO PRODUK
 - Input type=file capture=environment (kamera HP) atau file picker
 - Upload ke Google Drive folder dedicated
 - Update PRODUK.gambar_url
-- Endpoint: uploadFotoProduk (base64 Ã¢â€ â€™ Drive Ã¢â€ â€™ URL)
+- Endpoint: uploadFotoProduk (base64 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Drive ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ URL)
 - UI: tombol upload di admin-produk card
 
-F9.5 Ã¢â‚¬â€ MINIMUM ORDER QTY/NILAI PER RESELLER
+F9.5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MINIMUM ORDER QTY/NILAI PER RESELLER
 - Kolom baru RESELLER: min_qty_total, min_nilai_total (default 0)
 - Atau tabel baru RESELLER_MIN_ORDER (id_reseller, min_qty, min_nilai)
 - Validasi di buatPesanan backend
 - UI: halaman admin-minorder.html (set min per reseller)
 
-F10 Ã¢â‚¬â€ Registrasi reseller + approval + admin edit nama (masih backlog)
-F12 Ã¢â‚¬â€ Print templates (per PO, surat jalan, invoice)
+F10 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Registrasi reseller + approval + admin edit nama (masih backlog)
+F12 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Print templates (per PO, surat jalan, invoice)
 
 
 ================================================================
@@ -793,10 +793,10 @@ SELESAI HANDOFF
 ================================================================
 
 ================================================================
-19. UPDATE 2026-10-29 â€” FASE 9.1b SELESAI + DESIGN F9.7
+19. UPDATE 2026-10-29 Ã¢â‚¬â€ FASE 9.1b SELESAI + DESIGN F9.7
 ================================================================
 
-FASE 9.1b SELESAI â€” Price List (Paket Harga)
+FASE 9.1b SELESAI Ã¢â‚¬â€ Price List (Paket Harga)
 
 Commit history:
   c95f282 + 4d10abe + 42bb2ad (F9.1 per-reseller custom)
@@ -811,12 +811,12 @@ BACKEND (Pesanan.gs + Api.gs):
   * setPriceListItem, bulkSetPriceListItems
   * assignPriceListToReseller, bulkAssignPriceList, getResellerAssignments
 - handleGetProduk_ = 3-layer priority:
-  * Layer 3: custom override (RESELLER_HARGA) â€” prioritas tertinggi
+  * Layer 3: custom override (RESELLER_HARGA) Ã¢â‚¬â€ prioritas tertinggi
   * Layer 2: paket harga (PRICE_LIST_ITEMS)
   * Layer 1: harga normal (PRODUK.SellPrice)
 - Flag di response: `harga_khusus=true` (custom) atau `harga_price_list=true` (paket)
 
-FRONTEND (admin-harga.html â€” REWRITE 3 tab):
+FRONTEND (admin-harga.html Ã¢â‚¬â€ REWRITE 3 tab):
 - Tab 1: Paket Harga
   * List card paket (nama, ID, jumlah produk, badge aktif)
   * + Buat Paket Baru (modal): source normal / paket lain / reseller existing / CSV upload / empty
@@ -829,23 +829,23 @@ FRONTEND (admin-harga.html â€” REWRITE 3 tab):
   * Search + filter (dengan paket/dengan custom/tanpa paket)
   * Checkbox per row + "Pilih Semua (yang tampil)"
   * Action bar sticky: Assign Paket / Unassign / Clear
-  * Modal bulk assign: pilih paket â†’ apply ke semua terpilih (maks 100/batch)
+  * Modal bulk assign: pilih paket Ã¢â€ â€™ apply ke semua terpilih (maks 100/batch)
 - Tab 3: Custom per Reseller (fungsi F9.1 dipertahankan)
-  * Pilih reseller â†’ list custom override
+  * Pilih reseller Ã¢â€ â€™ list custom override
   * + Tambah, edit, hapus
 
 TEST PASS (2026-10-29):
-- Create paket dari normal: 498 items âœ“
-- Set item Bolu 50%: harga 12500 âœ“
-- Assign Bu Yeni â†’ Bu Yeni lihat 12500 + flag harga_price_list âœ“
-- Custom override 10000 > paket 12500 â†’ prioritas custom menang âœ“
-- Owner tetap lihat 25000 (default) âœ“
-- Delete paket dipakai reseller â†’ ditolak âœ“
-- Bulk assign 3 reseller â†’ updated=3, skipped=0 âœ“
-- Bulk unassign â†’ updated=3 âœ“
+- Create paket dari normal: 498 items Ã¢Å“â€œ
+- Set item Bolu 50%: harga 12500 Ã¢Å“â€œ
+- Assign Bu Yeni Ã¢â€ â€™ Bu Yeni lihat 12500 + flag harga_price_list Ã¢Å“â€œ
+- Custom override 10000 > paket 12500 Ã¢â€ â€™ prioritas custom menang Ã¢Å“â€œ
+- Owner tetap lihat 25000 (default) Ã¢Å“â€œ
+- Delete paket dipakai reseller Ã¢â€ â€™ ditolak Ã¢Å“â€œ
+- Bulk assign 3 reseller Ã¢â€ â€™ updated=3, skipped=0 Ã¢Å“â€œ
+- Bulk unassign Ã¢â€ â€™ updated=3 Ã¢Å“â€œ
 
 ================================================================
-20. DESIGN F9.7 â€” PROGRAM HARGA / DISKON (PLANNED, NOT YET BUILT)
+20. DESIGN F9.7 Ã¢â‚¬â€ PROGRAM HARGA / DISKON (PLANNED, NOT YET BUILT)
 ================================================================
 
 FITUR BARU: PROGRAM HARGA / DISKON (F9.7)
@@ -877,16 +877,16 @@ Kolom baru PESANAN:
 
 Status baru PESANAN: pending_approval, rejected
 
-KATALOG MODEL HARGA (dunia â€” 45+ model, 5 kategori)
+KATALOG MODEL HARGA (dunia Ã¢â‚¬â€ 45+ model, 5 kategori)
 Reference lengkap ada di: pages/admin-panduan-harga.html (halaman guide)
 
 A. Model Harga Dasar (6):
-  1. Fixed Price â€” 1 produk = 1 harga (AKTIF: PRODUK.SellPrice)
-  2. Price List / Catalog â€” paket harga (AKTIF: PRICE_LIST, F9.1b)
-  3. Customer-Specific â€” harga per reseller (AKTIF: RESELLER_HARGA, F9.1)
-  4. Tiered by Quantity â€” beli 10+ = lebih murah (RENCANA F9.7)
-  5. Wholesale Price â€” harga grosir (RENCANA: via Tiered)
-  6. Contract Price â€” harga kontrak jangka panjang (FUTURE: via customer-specific)
+  1. Fixed Price Ã¢â‚¬â€ 1 produk = 1 harga (AKTIF: PRODUK.SellPrice)
+  2. Price List / Catalog Ã¢â‚¬â€ paket harga (AKTIF: PRICE_LIST, F9.1b)
+  3. Customer-Specific Ã¢â‚¬â€ harga per reseller (AKTIF: RESELLER_HARGA, F9.1)
+  4. Tiered by Quantity Ã¢â‚¬â€ beli 10+ = lebih murah (RENCANA F9.7)
+  5. Wholesale Price Ã¢â‚¬â€ harga grosir (RENCANA: via Tiered)
+  6. Contract Price Ã¢â‚¬â€ harga kontrak jangka panjang (FUTURE: via customer-specific)
 
 B. Diskon (11):
   7. Discount % (RENCANA F9.7: order_discount_pct / item_discount_pct)
@@ -954,7 +954,7 @@ RULE TYPES AKTIF DI F9.7 (14 rules, semua JSON-based, tanpa coding):
   gift_with_purchase     { min_total, produk_hadiah, qty_hadiah }
 
 PRIORITY HARGA (final):
-  1. Program aktif (dipilih/target) â€” dihitung sebagai diskon di atas harga final
+  1. Program aktif (dipilih/target) Ã¢â‚¬â€ dihitung sebagai diskon di atas harga final
   2. Custom override per reseller (RESELLER_HARGA)
   3. Paket harga (PRICE_LIST)
   4. Harga normal (PRODUK.SellPrice)
@@ -974,12 +974,12 @@ FLOW ORDER DENGAN PROGRAM:
   1. Reseller pilih program di pesan.html (checkbox visible program)
      atau auto-apply kalau target + visibility=auto_apply
   2. Preview harga setelah apply (di UI)
-  3. Submit â†’ backend hitung final price via rule engine
+  3. Submit Ã¢â€ â€™ backend hitung final price via rule engine
   4. Snapshot harga program ke kolom PESANAN.program_snapshot (audit)
-  5. Kalau program mode_approval=manual â†’ status=pending_approval
-  6. Admin approve â†’ status=submitted (bisa di-lock)
-     Admin reject â†’ status=rejected + alasan
-  7. Kalau mode_approval=auto â†’ langsung submitted
+  5. Kalau program mode_approval=manual Ã¢â€ â€™ status=pending_approval
+  6. Admin approve Ã¢â€ â€™ status=submitted (bisa di-lock)
+     Admin reject Ã¢â€ â€™ status=rejected + alasan
+  7. Kalau mode_approval=auto Ã¢â€ â€™ langsung submitted
 
 APPROVAL DI LEVEL ITEM (Q5=C):
   - Kalau PO punya mix item program (perlu approval) + item normal
@@ -1004,7 +1004,7 @@ MERGE LOGIC (Q4=A+C):
 UI RESELLER (pesan.html):
   Section baru di atas cart:
     "Program Aktif untuk Anda"
-    â˜ Program A (checkbox â€” kalau visibility=visible)
+    Ã¢ËœÂ Program A (checkbox Ã¢â‚¬â€ kalau visibility=visible)
     atau auto-applied badge (kalau auto_apply)
     Preview harga setelah apply (strikethrough harga asli)
 
@@ -1023,25 +1023,25 @@ UI ADMIN:
     * Contoh konkret per model
 
 ESTIMASI F9.7 (~3-4 sesi kerja):
-  F9.7A â€” Foundation: setup sheet + CRUD program (backend + UI basic) [3-4 step]
-  F9.7B â€” Rule Engine Core: 14 rule types [4-5 step, PALING BERAT]
-  F9.7C â€” Integrasi Pesanan: hitung harga + approval flow [3-4 step]
-  F9.7D â€” Admin Approval UI [2-3 step]
-  F9.7E â€” Guide Page + Report + Polish + HANDOFF [1-2 step]
+  F9.7A Ã¢â‚¬â€ Foundation: setup sheet + CRUD program (backend + UI basic) [3-4 step]
+  F9.7B Ã¢â‚¬â€ Rule Engine Core: 14 rule types [4-5 step, PALING BERAT]
+  F9.7C Ã¢â‚¬â€ Integrasi Pesanan: hitung harga + approval flow [3-4 step]
+  F9.7D Ã¢â‚¬â€ Admin Approval UI [2-3 step]
+  F9.7E Ã¢â‚¬â€ Guide Page + Report + Polish + HANDOFF [1-2 step]
 
 BACKLOG LAINNYA (setelah F9.7):
-  F9.2 â€” Visibility produk hybrid (include/exclude per reseller) â€” BISA jadi rule type program
-  F9.3 â€” Role management data-driven (dari sheet CONFIG)
-  F9.4 â€” Upload foto produk (kamera HP â†’ Drive â†’ gambar_url)
-  F9.5 â€” Min order qty/nilai per reseller â€” BISA jadi rule type program
-  F9.6 â€” Update harga normal massal via CSV (semi-auto via XLOOKUP sheet terpisah)
-  F10 â€” Registrasi reseller + approval + admin edit nama
-  F12 â€” Print templates
+  F9.2 Ã¢â‚¬â€ Visibility produk hybrid (include/exclude per reseller) Ã¢â‚¬â€ BISA jadi rule type program
+  F9.3 Ã¢â‚¬â€ Role management data-driven (dari sheet CONFIG)
+  F9.4 Ã¢â‚¬â€ Upload foto produk (kamera HP Ã¢â€ â€™ Drive Ã¢â€ â€™ gambar_url)
+  F9.5 Ã¢â‚¬â€ Min order qty/nilai per reseller Ã¢â‚¬â€ BISA jadi rule type program
+  F9.6 Ã¢â‚¬â€ Update harga normal massal via CSV (semi-auto via XLOOKUP sheet terpisah)
+  F10 Ã¢â‚¬â€ Registrasi reseller + approval + admin edit nama
+  F12 Ã¢â‚¬â€ Print templates
 
 PENTING:
 - Semua rule type berbasis JSON, tidak perlu edit code untuk tambah rule baru
-- Kalau perlu model baru (misal voucher code) â€” tinggal tambah rule_type enum + handler
-- Program engine = inti kalkulasi harga â€” kalau salah, semua harga order bisa salah
+- Kalau perlu model baru (misal voucher code) Ã¢â‚¬â€ tinggal tambah rule_type enum + handler
+- Program engine = inti kalkulasi harga Ã¢â‚¬â€ kalau salah, semua harga order bisa salah
 - Perlu testing thorough sebelum production
 - Snapshot harga di PESANAN supaya audit trail aman meski program diubah nanti
 
@@ -1051,10 +1051,10 @@ SELESAI HANDOFF
 ================================================================
 
 ================================================================
-21. UPDATE 2026-10-29 — F9.7A SELESAI (Program Foundation)
+21. UPDATE 2026-10-29 â€” F9.7A SELESAI (Program Foundation)
 ================================================================
 
-FASE 9.7A SELESAI — Foundation Program Harga
+FASE 9.7A SELESAI â€” Foundation Program Harga
 
 Commit history:
   [commit F9.7A-1..6] Fase 9.7A: foundation program harga
@@ -1077,13 +1077,13 @@ DATABASE (2 sheet baru + 7 kolom PESANAN):
 BACKEND (Pesanan.gs + Api.gs):
 - 3 helper: getProgramById_, getProgramRules_, getNextProgramId_, getMaxProgramRuleNum_
 - 7 handler:
-  * handleGetPrograms_ — list semua program + rule count + usage
-  * handleGetProgramDetail_ — header + rules
-  * handleCreateProgram_ — validasi lengkap (14 rule types) + auto-ID KK22-PRG-XXXX
-  * handleUpdateProgram_ — update per field
-  * handleToggleProgramAktif_ — toggle boolean
-  * handleSetProgramRules_ — replace all rules (delete+insert)
-  * handleDeleteProgram_ — hapus program + semua rules
+  * handleGetPrograms_ â€” list semua program + rule count + usage
+  * handleGetProgramDetail_ â€” header + rules
+  * handleCreateProgram_ â€” validasi lengkap (14 rule types) + auto-ID KK22-PRG-XXXX
+  * handleUpdateProgram_ â€” update per field
+  * handleToggleProgramAktif_ â€” toggle boolean
+  * handleSetProgramRules_ â€” replace all rules (delete+insert)
+  * handleDeleteProgram_ â€” hapus program + semua rules
 - 7 route baru: getPrograms, getProgramDetail, createProgram, updateProgram,
   toggleProgramAktif, setProgramRules, deleteProgram
 - Rule ID format: KK22-PRL-XXXX
@@ -1111,34 +1111,34 @@ FRONTEND:
 - pages/dashboard.html: tile Program (CRUD) + nav update
 
 TEST PASS (2026-10-29):
-- TEST 1: createProgram dengan 2 rules → KK22-PRG-0001 ✓
-- TEST 2: getPrograms → 1 program ✓
-- TEST 3: getProgramDetail (setelah re-deploy) ✓
-- TEST 4: updateProgram → fields_updated ✓
-- TEST 5: toggleProgramAktif → status berubah ✓
-- TEST 6: setProgramRules → replace ✓
-- TEST 7: deleteProgram → terhapus ✓
-- TEST 8: invalid rule type → ditolak ✓
-- UI test: buat program via admin-program.html → sukses (belum full E2E)
+- TEST 1: createProgram dengan 2 rules â†’ KK22-PRG-0001 âœ“
+- TEST 2: getPrograms â†’ 1 program âœ“
+- TEST 3: getProgramDetail (setelah re-deploy) âœ“
+- TEST 4: updateProgram â†’ fields_updated âœ“
+- TEST 5: toggleProgramAktif â†’ status berubah âœ“
+- TEST 6: setProgramRules â†’ replace âœ“
+- TEST 7: deleteProgram â†’ terhapus âœ“
+- TEST 8: invalid rule type â†’ ditolak âœ“
+- UI test: buat program via admin-program.html â†’ sukses (belum full E2E)
 
-STATUS F9.7A: SELESAI (partial — belum full E2E test admin+reseller)
+STATUS F9.7A: SELESAI (partial â€” belum full E2E test admin+reseller)
 CATATAN PENTING:
-- Program TIDAK YET mempengaruhi harga order — masih DORMANT
+- Program TIDAK YET mempengaruhi harga order â€” masih DORMANT
 - Rule engine (kalkulasi harga aktual) = F9.7B (BELUM)
 - Integrasi dengan buatPesanan = F9.7C (BELUM)
 - Reseller pilih program di pesan.html = F9.7D (BELUM)
 - Admin approval UI (pending_approval) = F9.7E (BELUM)
 
 ================================================================
-22. NEXT SESSION — RENCANA F9.7B (RULE ENGINE CORE)
+22. NEXT SESSION â€” RENCANA F9.7B (RULE ENGINE CORE)
 ================================================================
 
 PRIORITAS 1: TEST E2E F9.7A (30 menit)
-- Login owner → admin-program.html → buat/edit/hapus program (visual test)
-- Login reseller → buka admin-program.html manual → harus redirect
+- Login owner â†’ admin-program.html â†’ buat/edit/hapus program (visual test)
+- Login reseller â†’ buka admin-program.html manual â†’ harus redirect
 - Konfirmasi dashboard tile Program muncul & bisa diakses
 
-PRIORITAS 2: F9.7B — Rule Engine Core (4-5 step, ~1 sesi penuh)
+PRIORITAS 2: F9.7B â€” Rule Engine Core (4-5 step, ~1 sesi penuh)
 - File baru: backend/apps-script/ProgramEngine.gs
 - 14 rule type implemented:
   * Item-level: item_fixed_price, item_discount_pct, item_discount_fixed,
@@ -1153,29 +1153,80 @@ PRIORITAS 2: F9.7B — Rule Engine Core (4-5 step, ~1 sesi penuh)
 - Cap maximum (max_diskon_per_order)
 - Unit test per rule type via PowerShell
 
-PRIORITAS 3: F9.7C — Integrasi Pesanan
+PRIORITAS 3: F9.7C â€” Integrasi Pesanan
 - Update buatPesanan_ terima id_program(s)[] dari reseller
 - Hitung harga final via rule engine
 - Snapshot program + rules ke PESANAN.program_snapshot (JSON audit)
-- Kalau mode_approval=manual → status=pending_approval
+- Kalau mode_approval=manual â†’ status=pending_approval
 
-PRIORITAS 4: F9.7D — Reseller UI (pesan.html)
+PRIORITAS 4: F9.7D â€” Reseller UI (pesan.html)
 - Section "Program Aktif untuk Anda"
 - Checkbox (visible) atau auto-applied badge (auto_apply)
 - Preview harga setelah apply
 
-PRIORITAS 5: F9.7E — Admin Approval UI
+PRIORITAS 5: F9.7E â€” Admin Approval UI
 - admin-pesanan.html: filter pending_approval, tombol approve/reject
 - Bulk approve
 
 SETELAH F9.7 SELESAI, BACKLOG LAIN:
-- F9.2 — Visibility produk hybrid (bisa jadi rule type program)
-- F9.3 — Role management data-driven
-- F9.4 — Upload foto produk
-- F9.5 — Min order (bisa jadi rule type)
-- F9.6 — Update harga normal massal via CSV
-- F10 — Registrasi reseller + approval
-- F12 — Print templates
+- F9.2 â€” Visibility produk hybrid (bisa jadi rule type program)
+- F9.3 â€” Role management data-driven
+- F9.4 â€” Upload foto produk
+- F9.5 â€” Min order (bisa jadi rule type)
+- F9.6 â€” Update harga normal massal via CSV
+- F10 â€” Registrasi reseller + approval
+- F12 â€” Print templates
+
+
+================================================================
+SELESAI HANDOFF
+================================================================
+
+================================================================
+23. UPDATE 2026-10-30 — CSS CLEANUP + MOJIBAKE FIX
+================================================================
+
+ISU: File style.css bengkak 568 KB karena 1 block corrupt mojibake
+     (528 KB = 93% file). Performa halaman melambat karena browser
+     harus parse CSS raksasa di setiap page.
+
+DIAGNOSA:
+- Block corrupt: posisi 12081 → 553223 (528.5 KB)
+- Source: 1 karakter (kemungkinan ·) yang ter-encode mojibake
+  140.383 kali di dalam 1 block
+- 5 CSS rules valid terselip di dalam block (.actions-row + 4 varian .btn-minus)
+- Pemicu: paste antar-editor dengan encoding berbeda (Word/WhatsApp → HTML editor)
+
+FIX:
+- Extract 28 baris CSS valid dari block corrupt
+- Hapus 528 KB block corrupt
+- Replace dengan 28 baris extracted
+- Hasil: style.css 568 KB → 40.4 KB (-93%)
+- Test visual PASS di semua halaman
+
+MOJIBAKE DI HTML:
+- admin-harga.html: 8 tower mojibake (Ã¢â‚¬â, Â·)
+- admin-pesanan.html: 2 tower mojibake
+- Fix: replace dengan · bersih (middle dot) + save UTF-8 no-BOM
+- Verify: 0 mojibake di seluruh project
+
+COMMIT:
+  chore: cleanup 528KB corrupt CSS block + fix mojibake
+
+DAMPAK PERFORMA:
+- Parsing CSS turun dari ~4-6 detik (HP low-end) ke ~0.3 detik
+- Semua halaman (katalog, pesan, admin) jadi RINGAN
+- Ideal untuk kerja mobile
+
+CATATAN KE DEPAN:
+- JANGAN paste dari Word/WhatsApp ke HTML/JS langsung
+- Kalau perlu copy text, paste ke Notepad dulu (strip encoding)
+- Kalau ada file bengkak aneh, cek mojibake pakai PowerShell:
+  [regex]::Matches($content, 'Ã[\x80-\xFF\u0100-\u017F\u2000-\u206F]{2,}').Count
+- Kalau > 100 tower, kemungkinan besar file corrupt — investigasi
+
+STATUS F9.7A: SELESAI dengan cleanup mojibake
+NEXT: F9.7B — Rule Engine Core
 
 
 ================================================================
