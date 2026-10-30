@@ -520,10 +520,10 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// ============ F9.1b-10: Create Paket Ã¢â‚¬â€ Paste/Upload CSV ============
+// ============ F9.1b-10: Create Paket · Paste/Upload CSV ============
 var createPaketExcelItems = [];
 
-// Alias ke parser bulk (F9.1b-9) Ã¢â‚¬â€ shape { items, skipped }
+// Alias ke parser bulk (F9.1b-9) · shape { items, skipped }
 function parseExcelTextCsv(text) {
   return parseBulkTabularText(text);
 }
@@ -580,7 +580,7 @@ document.getElementById('cpExcelFile').addEventListener('change', function(e) {
   reader.readAsText(file, 'UTF-8');
 });
 
-// Download template (dari produk normal Ã¢â‚¬â€ kolom Harga Paket kosong)
+// Download template (dari produk normal · kolom Harga Paket kosong)
 document.getElementById('cpBtnDownloadTemplate').addEventListener('click', function() {
   if (!allProduk || allProduk.length === 0) {
     showCpAlert('Produk belum dimuat. Tutup & buka modal lagi.');
@@ -722,7 +722,7 @@ async function loadMatrix() {
   }
   currentMatrixItems = r.data.items || [];
   document.getElementById('matrixTitle').textContent = r.data.header.nama_paket;
-  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ' + currentMatrixItems.length + ' produk';
+  document.getElementById('matrixSubtitle').textContent = r.data.header.id_price_list + ' · ' + currentMatrixItems.length + ' produk';
   renderMatrix();
 }
 

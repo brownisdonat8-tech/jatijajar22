@@ -192,7 +192,7 @@ function renderPO() {
   });
 
   var info = filtered.length + ' dari ' + semuaPO.length + ' PO';
-  if (activeStatus) info += ' Ãƒâ€šÃ‚Â· filter: ' + activeStatus;
+  if (activeStatus) info += ' · filter: ' + activeStatus;
   document.getElementById('countInfo').textContent = info;
 
   var wrap = document.getElementById('poWrap');
@@ -514,7 +514,7 @@ document.getElementById('btnLogout').addEventListener('click', async function() 
   var r = await KK22_API.whoami();
   if (!r.ok) { KK22_API.clearAuth(); window.location.href = 'login.html'; return; }
   if (r.data.role !== 'admin' && r.data.role !== 'owner') {
-    // bukan admin ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ redirect dashboard (jangan tampilkan halaman)
+    // bukan admin · redirect dashboard (jangan tampilkan halaman)
     window.location.href = 'dashboard.html';
     return;
   }
